@@ -22,6 +22,8 @@ The **CardioSurge AI Assistant** is an AI-powered decision support system design
 ## Architecture
 The system employs a **modular architecture** with the following components:
 
+![CardioSurge Architecture Diagram](CardioSurge_diagram.png)
+
 ### Core Components
 - **Streamlit Frontend**: User interface for interacting with the AI assistant.  
 - **Multi-Agent System**: Specialized agents for each surgical phase.  
