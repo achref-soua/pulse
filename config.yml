@@ -1,0 +1,16 @@
+phase_collections:
+  pre-op:
+    - patients
+    - devices
+    - guidelines
+    - literature
+  intra-op:
+    - patients
+    - devices
+    - guidelines
+    - notes
+  post-op:
+    - patients
+    - guidelines
+    - notes
+    - literature

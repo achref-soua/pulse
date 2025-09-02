@@ -5,8 +5,20 @@ import os
 import json
 import re
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field, ValidationError
+import pickle
+import yaml
 
 load_dotenv()
+
+
+# Structured model for routing outputs
+class RoutingDecision(BaseModel):
+    phase: str = Field(..., pattern="^(pre-op|intra-op|post-op)$")
+    collections: list[str]
+    patient_specific: bool
+    reasoning: str
+    patient_id: str | None = None
 
 
 class QueryRouter:
@@ -17,7 +29,22 @@ class QueryRouter:
             temperature=0.1,
         )
 
-    def extract_patient_id(self, query: str) -> str:
+        # Load config.yaml
+        config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
+        with open(config_path, "r") as f:
+            self.config = yaml.safe_load(f)
+
+        # Load phase classifier if available
+        clf_path = os.path.join(
+            os.path.dirname(__file__), "..", "database", "phase_classifier.pkl"
+        )
+        if os.path.exists(clf_path):
+            with open(clf_path, "rb") as f:
+                self.vectorizer, self.phase_clf = pickle.load(f)
+        else:
+            self.vectorizer, self.phase_clf = None, None
+
+    def extract_patient_id(self, query: str) -> str | None:
         """Extract patient ID from query if mentioned"""
         patient_patterns = [
             r"patient\s+([Pp]\d{3})",
@@ -25,169 +52,90 @@ class QueryRouter:
             r"pt\s+([Pp]\d{3})",
             r"case\s+([Pp]\d{3})",
         ]
-
         for pattern in patient_patterns:
             match = re.search(pattern, query, re.IGNORECASE)
             if match:
-                return match.group(1).upper()  # Standardize to uppercase
-
+                return match.group(1).upper()
         return None
 
+    def classify_phase(self, query: str) -> str:
+        """Use ML classifier if available, else fallback regex"""
+        if self.phase_clf and self.vectorizer:
+            X = self.vectorizer.transform([query])
+            return self.phase_clf.predict(X)[0]
+        return self._fallback_phase(query)
+
     def route_query(self, query: str) -> Dict[str, Any]:
-        """Route a query to determine phase, relevant collections, and patient context"""
-        # Extract patient ID if mentioned
         patient_id = self.extract_patient_id(query)
+        phase = self.classify_phase(query)
+
+        # Get default collections from config.yaml for this phase
+        default_collections = self.config.get("collections", {}).get(phase, [])
 
         prompt = ChatPromptTemplate.from_template("""
-        You are a medical AI assistant specializing in cardiac surgery. Analyze the following query and determine:
-        1. Which surgical phase it relates to (pre-op, intra-op, or post-op)
-        2. Which knowledge collections are most relevant to answer it
-        3. Whether this query is about a specific patient
+        You are a medical AI assistant specializing in cardiac surgery. 
+        Determine which knowledge collections are most relevant for this query.
         
         Available collections:
-        - patients: Patient records and medical history
-        - devices: Medical device specifications and instructions
-        - guidelines: Clinical practice guidelines
-        - literature: Medical research literature
-        - notes: Clinical notes from various phases
-        
+        - patients
+        - devices
+        - guidelines
+        - literature
+        - notes
+
         Query: {query}
-        
-        Respond with a JSON object in this exact format:
+
+        Respond strictly in JSON:
         {{
-            "phase": "pre-op|intra-op|post-op",
-            "collections": ["collection1", "collection2", ...],
-            "patient_specific": true|false,
-            "reasoning": "Brief explanation of your routing decision"
+            "collections": ["collection1", "collection2"],
+            "reasoning": "Why these collections are relevant"
         }}
         """)
 
         chain = prompt | self.llm
         response = chain.invoke({"query": query})
 
-        # Parse response
         try:
-            # Try to extract JSON from response
+            # Parse JSON safely
             json_match = re.search(r"\{.*\}", response.content, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
+            parsed = json.loads(json_match.group()) if json_match else {}
 
-                # If we found a patient ID in the query, mark as patient_specific
-                if patient_id:
-                    result["patient_specific"] = True
-                    result["patient_id"] = patient_id
-                    result["reasoning"] += (
-                        f" Query specifically mentions patient {patient_id}."
-                    )
+            # Use LLM-provided collections if valid, else fall back to config.yaml defaults
+            collections = (
+                parsed.get("collections", []) or default_collections or ["patients"]
+            )
 
-                return result
-            else:
-                return self._fallback_routing(query, patient_id)
-        except json.JSONDecodeError:
+            routing = RoutingDecision(
+                phase=phase,
+                collections=collections,
+                patient_specific=bool(patient_id),
+                reasoning=parsed.get("reasoning", "")
+                + (f" Query mentions {patient_id}" if patient_id else ""),
+                patient_id=patient_id,
+            )
+            return routing.dict()
+
+        except (json.JSONDecodeError, ValidationError):
+            # Delegate to fallback routing to avoid duplication
             return self._fallback_routing(query, patient_id)
 
-    def _fallback_routing(self, query: str, patient_id: str = None) -> Dict[str, Any]:
-        """Fallback routing logic if LLM parsing fails"""
-        query_lower = query.lower()
+    def _fallback_phase(self, query: str) -> str:
+        q = query.lower()
+        if any(term in q for term in ["intra-op", "surgery", "deployment", "during"]):
+            return "intra-op"
+        if any(term in q for term in ["post-op", "recovery", "follow-up"]):
+            return "post-op"
+        return "pre-op"
 
-        # Phase detection
-        if any(
-            term in query_lower
-            for term in [
-                "pre-op",
-                "preoperative",
-                "planning",
-                "assessment",
-                "selection",
-                "evaluate",
-                "suitable",
-            ]
-        ):
-            phase = "pre-op"
-            reasoning = "Query relates to preoperative planning or assessment"
-        elif any(
-            term in query_lower
-            for term in [
-                "intra-op",
-                "intraoperative",
-                "surgery",
-                "procedure",
-                "deployment",
-                "step",
-                "during",
-                "how to",
-            ]
-        ):
-            phase = "intra-op"
-            reasoning = "Query relates to intraoperative procedures or guidance"
-        elif any(
-            term in query_lower
-            for term in [
-                "post-op",
-                "postoperative",
-                "recovery",
-                "follow-up",
-                "discharge",
-                "complication",
-                "after surgery",
-            ]
-        ):
-            phase = "post-op"
-            reasoning = "Query relates to postoperative care or follow-up"
-        else:
-            phase = "pre-op"
-            reasoning = "Defaulting to pre-op for general queries"
-
-        # Collection detection - always include patients
-        collections = ["patients"]
-
-        if any(
-            term in query_lower
-            for term in ["device", "stent", "graft", "implant", "sizing", "delivery"]
-        ):
-            collections.append("devices")
-        if any(
-            term in query_lower
-            for term in [
-                "guideline",
-                "protocol",
-                "standard",
-                "recommend",
-                "best practice",
-            ]
-        ):
-            collections.append("guidelines")
-        if any(
-            term in query_lower
-            for term in [
-                "study",
-                "literature",
-                "research",
-                "trial",
-                "evidence",
-                "outcome",
-            ]
-        ):
-            collections.append("literature")
-        if any(
-            term in query_lower
-            for term in ["note", "record", "history", "previous", "prior"]
-        ):
-            collections.append("notes")
-
-        # Check if patient-specific
-        patient_specific = patient_id is not None
-        if patient_specific:
-            reasoning += f" Query specifically mentions patient {patient_id}."
-
-        result = {
+    def _fallback_routing(self, query: str, patient_id: str | None):
+        phase = self._fallback_phase(query)
+        default_collections = self.config.get("collections", {}).get(
+            phase, ["patients"]
+        )
+        return {
             "phase": phase,
-            "collections": collections,
-            "patient_specific": patient_specific,
-            "reasoning": reasoning,
+            "collections": default_collections,
+            "patient_specific": bool(patient_id),
+            "reasoning": "Fallback routing used.",
+            "patient_id": patient_id,
         }
-
-        if patient_specific:
-            result["patient_id"] = patient_id
-
-        return result

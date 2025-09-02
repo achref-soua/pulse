@@ -33,27 +33,27 @@ class SurgicalAssistant:
         """Retrieve relevant information from specified collections with patient filtering"""
         context = ""
 
-        # If this is a patient-specific query, get the patient info first
         if patient_id:
             patient_info = chroma_retriever.get_patient_info(patient_id)
-            if patient_info:
-                context += (
-                    f"\n\n--- Patient Information ---\n{patient_info['document']}\n"
-                )
+            if not patient_info:
+                # Patient not found → hard stop
+                return f"ERROR: Patient {patient_id} does not exist in the database. Please ask about an existing patient."
+            context += (
+                f"\n\n--- Patient Information ---\n{patient_info.json(indent=2)}\n"
+            )
 
         for collection in collections:
-            # For patient-specific queries, filter notes by patient_id
-            filters = None
-            if patient_id and collection == "notes":
-                filters = {"patient_id": patient_id}
-
+            filters = (
+                {"patient_id": patient_id}
+                if (patient_id and collection == "notes")
+                else None
+            )
             results = chroma_retriever.query_collection(
                 collection, query, filters=filters
             )
             if results:
                 context += f"\n\n--- Information from {collection} ---\n"
-                for i, result in enumerate(results[:3]):  # Top 3 results per collection
-                    # Skip if this is the same patient info we already added
+                for i, result in enumerate(results[:3]):
                     if (
                         patient_id
                         and collection == "patients"
@@ -137,11 +137,12 @@ class SurgicalAssistant:
         self.add_to_history("user", query)
         self.add_to_history("assistant", response.content)
 
-        return {
-            "response": response.content,
-            "phase": phase,
-            "collections": collections,
-            "patient_specific": patient_specific,
-            "patient_id": patient_id,
-            "reasoning": reasoning,
-        }
+        if context.startswith("ERROR:"):
+            return {
+                "response": response.content,
+                "phase": phase,
+                "collections": collections,
+                "patient_specific": patient_specific,
+                "patient_id": patient_id,
+                "reasoning": reasoning,
+            }
