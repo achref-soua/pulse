@@ -1,9 +1,5 @@
 <p align="center">
-  <svg width="160" height="42" viewBox="0 0 220 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <polyline points="0,28 10,28 15,28 19,12 23,44 27,8 31,40 35,28 45,28" stroke="#e11d48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <line x1="57" y1="8" x2="57" y2="48" stroke="#c7d2fe" stroke-width="1.5"/>
-    <text x="67" y="40" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="32" font-weight="800" letter-spacing="-1" fill="#3730a3">PULSE</text>
-  </svg>
+  <img src="docs/assets/logo.png" alt="Pulse" height="48">
 </p>
 
 <h3 align="center">Aortic &amp; endovascular surgery intelligence — from referral to recovery</h3>
@@ -53,33 +49,31 @@ The project exists to show what a senior-level, full-stack, AI-native clinical t
 ### Patient detail — Overview tab (Patient 1)
 ![Patient overview](docs/assets/patient1-overview.png)
 
-### Patient detail — Risk & Suitability tab (Patient 2)
-![Patient risk](docs/assets/patient2-risk.png)
+### Patient detail — multiple patients, multiple tabs
+| Overview | Risk & Suitability | Notes | AI Summary |
+|----------|--------------------|-------|------------|
+| ![P1 overview](docs/assets/patient1-overview.png) | ![P1 risk](docs/assets/patient1-risk.png) | ![P1 notes](docs/assets/patient1-notes.png) | ![P1 AI](docs/assets/patient1-ai-summary.png) |
+| ![P2 overview](docs/assets/patient2-overview.png) | ![P2 risk](docs/assets/patient2-risk.png) | | |
+| ![P3 overview](docs/assets/patient3-overview.png) | | | ![P3 AI](docs/assets/patient3-ai-summary.png) |
 
-### Patient detail — Anatomy tab (Patient 3)
-![Patient anatomy](docs/assets/patient3-anatomy.png)
+### Risk calculators — RCRI, NEWS2, GAS
+| RCRI form | RCRI result | NEWS2 result | GAS result |
+|-----------|-------------|--------------|------------|
+| ![RCRI form](docs/assets/risk-rcri-form.png) | ![RCRI result](docs/assets/risk-rcri-result.png) | ![NEWS2 result](docs/assets/risk-news2-result.png) | ![GAS result](docs/assets/risk-gas-result.png) |
 
-### Post-operative monitoring with NEWS2 bands
-![Patient post-op](docs/assets/patient1-postop.png)
-
-### Risk calculators — RCRI form and result
-| Form | Result |
-|------|--------|
-| ![RCRI form](docs/assets/risk-rcri-form.png) | ![RCRI result](docs/assets/risk-rcri-result.png) |
-
-### Risk calculators — NEWS2 and GAS
-| NEWS2 | GAS |
-|-------|-----|
-| ![NEWS2 result](docs/assets/risk-news2-result.png) | ![GAS result](docs/assets/risk-gas-result.png) |
-
-### AI Copilot — streaming chat panel
-![AI Copilot](docs/assets/ai-copilot-panel.png)
+### Monitoring & Devices
+| Monitoring | Devices |
+|------------|---------|
+| ![Monitoring](docs/assets/monitoring.png) | ![Devices](docs/assets/devices.png) |
 
 ### Knowledge Base — guidelines and literature
 ![Knowledge Base](docs/assets/knowledge-base.png)
 
 ### Medical-grade PDF report
 *(generated on demand per patient — download via the AI Summary tab)*
+
+### AI Copilot — streaming chat
+![AI Copilot](docs/assets/ai-copilot-panel.png)
 
 ### Admin — user management and audit log
 | Users | Audit Log |

@@ -30,7 +30,11 @@ class Medication(Base, UUIDMixin):
         UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    med_class: Mapped[MedClass] = mapped_column(Enum(MedClass), nullable=False, default=MedClass.other)
+    med_class: Mapped[MedClass] = mapped_column(
+        Enum(MedClass, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=MedClass.other,
+    )
     dose: Mapped[str | None] = mapped_column(String(50), nullable=True)
     route: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
