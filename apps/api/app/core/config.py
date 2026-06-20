@@ -62,6 +62,16 @@ class Settings(BaseSettings):
             return [o.strip() for o in v.split(",")]
         return v
 
+    def check_production_secrets(self) -> None:
+        """Raise at startup if any placeholder secret is used in production."""
+        if self.environment != "production":
+            return
+        placeholder_prefix = "dev-"
+        if self.jwt_secret.startswith(placeholder_prefix):
+            raise RuntimeError("JWT_SECRET must be set to a real secret in production")
+        if self.quiver_api_key.startswith(placeholder_prefix):
+            raise RuntimeError("QUIVER_API_KEY must be set to a real key in production")
+
 
 @lru_cache
 def get_settings() -> Settings:

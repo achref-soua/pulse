@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.models.patient import Patient
 
 
-class NoteType(str, enum.Enum):
+class NoteType(enum.StrEnum):
     referral = "referral"
     pre_op_assessment = "pre_op_assessment"
     op_note = "op_note"

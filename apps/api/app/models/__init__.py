@@ -4,7 +4,7 @@ from app.models.comorbidity import Comorbidity
 from app.models.conversation import Conversation, Message
 from app.models.device import Device
 from app.models.lab import Lab
-from app.models.medication import Medication, MedClass
+from app.models.medication import MedClass, Medication
 from app.models.patient import AneurysmType, Patient, Phase, PlannedIntervention
 from app.models.risk_assessment import RiskAssessment
 from app.models.user import User, UserRole

@@ -1,16 +1,15 @@
 from collections.abc import AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
-from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.database import Base, get_db
 from app.core.quiver_client import get_quiver_client
+from app.core.security import hash_password
 from app.main import app
 from app.models.user import User, UserRole
-from app.core.security import hash_password
 
 TEST_DB_URL = "postgresql+asyncpg://pulse:pulse_test@localhost:5432/pulse_test"
 

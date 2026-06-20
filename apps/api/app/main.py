@@ -14,6 +14,7 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings.check_production_secrets()
     await ensure_collections()
     yield
     await engine.dispose()

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
@@ -8,9 +8,9 @@ class LoginRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str
+    # bcrypt truncates at 72 bytes; enforce min complexity at the schema layer
+    password: str = Field(min_length=12, max_length=72)
     full_name: str
-    role: str = "nurse"
 
 
 class TokenResponse(BaseModel):

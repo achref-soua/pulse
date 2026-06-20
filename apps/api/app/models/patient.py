@@ -9,27 +9,27 @@ from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from app.models.comorbidity import Comorbidity
     from app.models.clinical_note import ClinicalNote
+    from app.models.comorbidity import Comorbidity
     from app.models.lab import Lab
     from app.models.medication import Medication
     from app.models.vital import Vital
 
 
-class AneurysmType(str, enum.Enum):
+class AneurysmType(enum.StrEnum):
     infrarenal_aaa = "infrarenal_AAA"
     juxtarenal_aaa = "juxtarenal_AAA"
     taa = "TAA"
     ascending = "ascending"
 
 
-class Phase(str, enum.Enum):
+class Phase(enum.StrEnum):
     pre = "pre"
     intra = "intra"
     post = "post"
 
 
-class PlannedIntervention(str, enum.Enum):
+class PlannedIntervention(enum.StrEnum):
     evar = "EVAR"
     tevar = "TEVAR"
     open_graft = "open_graft"

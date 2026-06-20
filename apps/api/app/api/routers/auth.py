@@ -27,18 +27,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        # Return 409 but don't reveal which field caused it to prevent enumeration
+        raise HTTPException(status_code=409, detail="Registration failed")
 
-    try:
-        role = UserRole(body.role)
-    except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
-
+    # Self-registration always creates a nurse; admins elevate roles separately
     user = User(
         email=body.email,
         hashed_password=hash_password(body.password),
         full_name=body.full_name,
-        role=role,
+        role=UserRole.nurse,
     )
     db.add(user)
     await db.flush()
@@ -76,7 +73,9 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     try:
         payload = decode_token(body.refresh_token)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(  # noqa: B904
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        ) from None
 
     if payload.get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not a refresh token")

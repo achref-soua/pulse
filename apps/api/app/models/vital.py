@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.models.patient import Patient
 
 
-class AVPU(str, enum.Enum):
+class AVPU(enum.StrEnum):
     A = "A"  # Alert
     V = "V"  # Voice
     P = "P"  # Pain

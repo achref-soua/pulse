@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from app.models.patient import Patient
 
 
-class MedClass(str, enum.Enum):
+class MedClass(enum.StrEnum):
     antiplatelet = "antiplatelet"
     anticoagulant = "anticoagulant"
     statin = "statin"

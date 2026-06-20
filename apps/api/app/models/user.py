@@ -7,7 +7,7 @@ from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDMixin
 
 
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     surgeon = "surgeon"
     anesthetist = "anesthetist"
     nurse = "nurse"
