@@ -1,0 +1,86 @@
+version: "3"
+
+vars:
+  API_CONTAINER: pulse-api-1
+  WEB_CONTAINER: pulse-web-1
+
+tasks:
+  up:
+    desc: Start the full stack
+    cmd: docker compose up -d --build --wait
+
+  down:
+    desc: Stop the full stack
+    cmd: docker compose down
+
+  logs:
+    desc: Tail all service logs
+    cmd: docker compose logs -f
+
+  migrate:
+    desc: Run Alembic migrations
+    cmd: docker compose exec api alembic upgrade head
+
+  seed:
+    desc: Seed the database with synthetic data and populate Quiver collections
+    cmd: docker compose exec api python -m app.seed.main
+
+  test:
+    desc: Run all tests (backend + frontend)
+    cmds:
+      - docker compose exec api pytest -v --tb=short
+      - pnpm turbo test
+
+  test:api:
+    desc: Run backend tests only
+    cmd: docker compose exec api pytest -v --tb=short
+
+  test:web:
+    desc: Run frontend tests only
+    cmd: pnpm turbo test --filter=web
+
+  lint:
+    desc: Lint all code
+    cmds:
+      - docker compose exec api ruff check .
+      - pnpm turbo lint
+
+  type-check:
+    desc: Type-check all code
+    cmds:
+      - docker compose exec api mypy app
+      - pnpm turbo type-check
+
+  e2e:
+    desc: Run Playwright E2E tests
+    dir: apps/web
+    cmd: pnpm playwright test
+
+  screenshots:
+    desc: Capture screenshots of all screens to docs/assets/
+    dir: apps/web
+    cmd: pnpm playwright test --project=screenshots
+
+  openapi-types:
+    desc: Generate TypeScript types from the FastAPI OpenAPI schema
+    cmds:
+      - curl -s http://localhost:8000/openapi.json -o /tmp/pulse-openapi.json
+      - pnpm dlx openapi-typescript /tmp/pulse-openapi.json -o apps/web/src/lib/api-types.ts
+
+  install:
+    desc: Install all dependencies (pnpm + uv)
+    cmds:
+      - pnpm install
+      - cd apps/api && uv sync
+
+  build:
+    desc: Build all packages
+    cmd: pnpm turbo build
+
+  reset:
+    desc: Wipe volumes and restart fresh
+    cmds:
+      - docker compose down -v
+      - docker compose up -d --build --wait
+      - task migrate
+      - task seed
