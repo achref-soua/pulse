@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
     environment: Literal["development", "production", "test"] = "development"
     log_level: str = "INFO"
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3100"]
 
     # Demo credentials (seed only)
     demo_surgeon_email: str = "surgeon@demo.pulse"

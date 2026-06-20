@@ -63,7 +63,9 @@ async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends
     db.add(log)
 
     return TokenResponse(
-        access_token=create_access_token(str(user.id), user.role.value),
+        access_token=create_access_token(
+            str(user.id), user.role.value, user.email, user.full_name or ""
+        ),
         refresh_token=create_refresh_token(str(user.id)),
     )
 
@@ -86,6 +88,8 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     return TokenResponse(
-        access_token=create_access_token(str(user.id), user.role.value),
+        access_token=create_access_token(
+            str(user.id), user.role.value, user.email, user.full_name or ""
+        ),
         refresh_token=create_refresh_token(str(user.id)),
     )

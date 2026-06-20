@@ -39,7 +39,7 @@ export function useCurrentUser(): CurrentUser | null {
     setUser({
       id: payload.sub,
       email: payload.email,
-      fullName: payload.full_name,
+      fullName: payload.full_name ?? payload.email ?? "User",
       role: payload.role,
     });
   }, []);

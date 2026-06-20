@@ -40,7 +40,18 @@ def _require_groq(settings=None):
 
 def _patient_context_str(p: Patient) -> str:
     """Serialize key patient fields into a text block for the system prompt."""
-    comorbidities = ", ".join(c.name for c in (p.comorbidities or []))
+    _COMORBIDITY_LABELS = {
+        "htn": "Hypertension", "dm": "Diabetes", "insulin_dependent": "Insulin-dependent DM",
+        "ckd": "CKD", "copd": "COPD", "cad": "CAD", "prior_mi": "Prior MI",
+        "afib": "AF", "cvd_stroke": "Stroke/CVD", "chf": "CHF",
+        "smoking_current": "Current smoker", "smoking_former": "Ex-smoker",
+    }
+    comorbidities = ", ".join(
+        label
+        for c in (p.comorbidities or [])
+        for field, label in _COMORBIDITY_LABELS.items()
+        if getattr(c, field, False)
+    )
     meds = ", ".join(m.name for m in (p.medications or []))
     last_vital = (
         sorted(p.vitals or [], key=lambda v: v.taken_at, reverse=True)[:1] or [None]
@@ -205,18 +216,19 @@ async def download_report(
     # Compute available risk scores from patient labs/vitals inline
     risk_scores: dict = {}
     if p.vitals:
+        import dataclasses
+        from app.clinical.news2 import NEWS2Inputs, compute_news2
         latest = sorted(p.vitals, key=lambda v: v.taken_at, reverse=True)[0]
-        from app.clinical.news2 import calculate_news2
-        news2_result = calculate_news2(
+        news2_result = compute_news2(NEWS2Inputs(
             respiration_rate=latest.rr or 16,
-            spo2=latest.spo2 or 98,
+            spo2=latest.spo2 or 98.0,
             on_supplemental_oxygen=latest.on_oxygen or False,
             systolic_bp=latest.systolic_bp or 120,
             heart_rate=latest.heart_rate or 70,
-            consciousness=latest.consciousness or "A",
+            consciousness=str(latest.consciousness or "A"),
             temperature=latest.temp_c or 36.5,
-        )
-        risk_scores["NEWS2"] = news2_result.model_dump()
+        ))
+        risk_scores["NEWS2"] = dataclasses.asdict(news2_result)
 
     patient_dict = {
         "patient_id": p.patient_id,

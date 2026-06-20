@@ -14,12 +14,13 @@ import path from "path";
 import fs from "fs";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
+const API_URL = process.env.API_URL ?? "http://localhost:8000";
 const OUT_DIR = path.resolve(__dirname, "../../../docs/assets");
 
-const SURGEON_EMAIL = process.env.SURGEON_EMAIL ?? "surgeon@pulse.test";
-const SURGEON_PASSWORD = process.env.SURGEON_PASSWORD ?? "PulseDemo1!";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@pulse.test";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "PulseDemo1!";
+const SURGEON_EMAIL = process.env.SURGEON_EMAIL ?? "surgeon@demo.pulse";
+const SURGEON_PASSWORD = process.env.SURGEON_PASSWORD ?? "demo-surgeon-2024";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@demo.pulse";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "demo-admin-2024";
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -29,12 +30,31 @@ async function shot(page: Page, name: string, fullPage = false) {
   console.log(`  ✓ ${name}.png`);
 }
 
+/** Get tokens from API via Node fetch (bypasses browser CORS), inject into localStorage. */
 async function loginAs(page: Page, email: string, password: string) {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(`Login failed for ${email}: ${res.status}`);
+  const { access_token, refresh_token } = (await res.json()) as {
+    access_token: string;
+    refresh_token: string;
+  };
+
+  // Load any page first so we have a context to set localStorage on
   await page.goto(`${BASE_URL}/login`);
-  await page.fill('[name="email"]', email);
-  await page.fill('[name="password"]', password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/\/(dashboard|patients)/, { timeout: 12000 });
+  await page.waitForLoadState("domcontentloaded");
+  await page.evaluate(
+    ({ at, rt }) => {
+      localStorage.setItem("pulse_access_token", at);
+      localStorage.setItem("pulse_refresh_token", rt);
+    },
+    { at: access_token, rt: refresh_token }
+  );
+  await page.goto(`${BASE_URL}/dashboard`);
+  await page.waitForURL(/\/dashboard/, { timeout: 15000 });
 }
 
 async function idle(page: Page, ms = 600) {
@@ -52,18 +72,19 @@ async function clickTab(page: Page, label: RegExp | string): Promise<boolean> {
   return false;
 }
 
-/** Return hrefs for up to `max` patient rows. */
-async function collectPatientIds(page: Page, max = 4): Promise<string[]> {
-  await page.goto(`${BASE_URL}/patients`);
-  await idle(page, 800);
-  const rows = page.locator("tbody tr");
-  const count = Math.min(await rows.count(), max);
-  const ids: string[] = [];
-  for (let i = 0; i < count; i++) {
-    const href = await rows.nth(i).locator("a, [data-href]").first().getAttribute("href").catch(() => null);
-    if (href) ids.push(href);
-  }
-  return ids;
+/** Return patient_id slugs from the API (avoids scraping the table). */
+async function fetchPatientSlugs(count = 3): Promise<string[]> {
+  const token = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: SURGEON_EMAIL, password: SURGEON_PASSWORD }),
+  }).then((r) => r.json()).then((d) => d.access_token as string);
+
+  const patients = await fetch(`${API_URL}/patients?limit=${count}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((r) => r.json()) as Array<{ patient_id: string }>;
+
+  return patients.map((p) => p.patient_id);
 }
 
 async function run() {
@@ -87,87 +108,73 @@ async function run() {
     await shot(anonPage, "login");
     await anonCtx.close();
 
-    // 2. Dashboard
+    // 2. Dashboard — wait for stat cards to hydrate
     await page.goto(`${BASE_URL}/dashboard`);
-    await idle(page, 800);
+    await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+    await idle(page, 1500);
     await shot(page, "dashboard");
 
     // 3. Patients list
     await page.goto(`${BASE_URL}/patients`);
-    await idle(page, 800);
+    await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+    await idle(page, 1000);
     await shot(page, "patients-list");
 
     // 4–N. First 3 patients — capture Overview + all tabs
-    const patientLinks = await collectPatientIds(page, 3);
+    const slugs = await fetchPatientSlugs(3);
 
-    for (let pi = 0; pi < patientLinks.length; pi++) {
-      const href = patientLinks[pi];
+    for (let pi = 0; pi < slugs.length; pi++) {
+      const slug = slugs[pi];
       const tag = `patient${pi + 1}`;
 
-      // Overview tab
-      await page.goto(`${BASE_URL}${href}`);
-      await idle(page, 800);
+      // Overview (default tab) — wait for patient data to load from API
+      await page.goto(`${BASE_URL}/patients/${slug}`);
+      await page.waitForLoadState("networkidle", { timeout: 20000 }).catch(() => {});
+      await idle(page, 1200);
       await shot(page, `${tag}-overview`);
 
-      // Anatomy tab
-      if (await clickTab(page, /anatomy/i)) await shot(page, `${tag}-anatomy`);
-
-      // Risk & Suitability tab
-      if (await clickTab(page, /risk/i)) await shot(page, `${tag}-risk`);
-
-      // Monitoring tab
-      if (await clickTab(page, /monitoring/i)) await shot(page, `${tag}-monitoring`);
-
-      // Post-op tab (only present for post-op phase patients)
-      if (await clickTab(page, /post.?op/i)) await shot(page, `${tag}-postop`);
-
-      // AI Summary tab
-      if (await clickTab(page, /ai.?summ|copilot/i)) await shot(page, `${tag}-ai-summary`);
+      // Patient detail tabs — these labels are unique to the tab bar, not the sidebar
+      for (const [label, suffix] of [
+        ["Risk & Suitability", "risk"],
+        ["Notes", "notes"],
+        ["Post-op", "postop"],
+        ["AI Summary", "ai-summary"],
+      ] as [string, string][]) {
+        const btn = page.getByRole("button", { name: label, exact: true }).first();
+        const visible = await btn.isVisible({ timeout: 4000 }).catch(() => false);
+        if (visible) {
+          await btn.click();
+          await idle(page, 800);
+          await shot(page, `${tag}-${suffix}`);
+        }
+      }
     }
 
-    // 5. Risk calculators — landing page
+    // 5. Risk calculators — navigate once, click each selector tab
     await page.goto(`${BASE_URL}/risk`);
-    await idle(page, 600);
+    await page.waitForSelector("button", { timeout: 10000 });
+    await idle(page, 800);
     await shot(page, "risk-calculators");
 
-    // RCRI calculator
-    const rcriBtn = page.locator("button").filter({ hasText: /RCRI/i }).first();
-    if (await rcriBtn.isVisible({ timeout: 4000 }).catch(() => false)) {
-      await rcriBtn.click();
-      await idle(page, 400);
-      await shot(page, "risk-rcri-form");
-      // Fill a couple of checkboxes and calculate
+    for (const [calcLabel, calcId] of [
+      ["RCRI", "rcri"],
+      ["NEWS2", "news2"],
+      ["GAS", "gas"],
+    ] as [string, string][]) {
+      // Click the small selector button (exact text label, not "Calculate X")
+      await page.locator(`button:text-is("${calcLabel}")`).first().click().catch(() => {});
+      await idle(page, 500);
+      await shot(page, `risk-${calcId}-form`);
+
+      // Tick up to 2 checkboxes
       const boxes = page.locator('input[type="checkbox"]');
-      const boxCount = await boxes.count();
-      if (boxCount >= 2) {
-        await boxes.nth(0).check().catch(() => {});
-        await boxes.nth(1).check().catch(() => {});
-      }
-      await page.locator('button:has-text("Calculate"), button[type="submit"]').first().click().catch(() => {});
-      await idle(page, 400);
-      await shot(page, "risk-rcri-result");
-    }
+      const n = await boxes.count();
+      for (let i = 0; i < Math.min(n, 2); i++) await boxes.nth(i).check().catch(() => {});
 
-    // NEWS2 calculator
-    const news2Btn = page.locator("button").filter({ hasText: /NEWS2/i }).first();
-    if (await news2Btn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await news2Btn.click();
-      await idle(page, 400);
-      await shot(page, "risk-news2-form");
-      await page.locator('button:has-text("Calculate"), button[type="submit"]').first().click().catch(() => {});
-      await idle(page, 400);
-      await shot(page, "risk-news2-result");
-    }
-
-    // GAS calculator
-    const gasBtn = page.locator("button").filter({ hasText: /GAS|Global/i }).first();
-    if (await gasBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await gasBtn.click();
-      await idle(page, 400);
-      await shot(page, "risk-gas-form");
-      await page.locator('button:has-text("Calculate"), button[type="submit"]').first().click().catch(() => {});
-      await idle(page, 400);
-      await shot(page, "risk-gas-result");
+      // Submit
+      await page.locator(`button:has-text("Calculate")`).last().click().catch(() => {});
+      await idle(page, 700);
+      await shot(page, `risk-${calcId}-result`);
     }
 
     // 6. Devices

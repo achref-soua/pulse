@@ -48,7 +48,10 @@ class Patient(Base, UUIDMixin, TimestampMixin):
     mrn: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
 
     # Aortic anatomy
-    aneurysm_type: Mapped[AneurysmType | None] = mapped_column(Enum(AneurysmType), nullable=True)
+    # values_callable makes SQLAlchemy use .value (e.g. "infrarenal_AAA") not .name ("infrarenal_aaa")
+    aneurysm_type: Mapped[AneurysmType | None] = mapped_column(
+        Enum(AneurysmType, values_callable=lambda x: [e.value for e in x]), nullable=True
+    )
     location: Mapped[str | None] = mapped_column(String(100), nullable=True)
     max_diameter_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
     neck_length_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -60,9 +63,13 @@ class Patient(Base, UUIDMixin, TimestampMixin):
     ct_scan_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Status
-    phase: Mapped[Phase] = mapped_column(Enum(Phase), nullable=False, default=Phase.pre)
+    phase: Mapped[Phase] = mapped_column(
+        Enum(Phase, values_callable=lambda x: [e.value for e in x]), nullable=False, default=Phase.pre
+    )
     planned_intervention: Mapped[PlannedIntervention] = mapped_column(
-        Enum(PlannedIntervention), nullable=False, default=PlannedIntervention.surveillance
+        Enum(PlannedIntervention, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=PlannedIntervention.surveillance,
     )
     surgery_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 

@@ -125,7 +125,7 @@ export function Sidebar({ userRole, userEmail, userFullName }: SidebarProps) {
       <div className="border-t border-border px-3 py-3">
         <div className="flex items-center gap-2 mb-2">
           <div className="h-7 w-7 rounded-full bg-indigo-800 flex items-center justify-center text-xs font-semibold text-indigo-200 shrink-0">
-            {userFullName.charAt(0).toUpperCase()}
+            {userFullName?.charAt(0).toUpperCase() ?? "?"}
           </div>
           <div className="min-w-0">
             <p className="text-xs font-medium text-foreground truncate">{userFullName}</p>
