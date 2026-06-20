@@ -511,7 +511,29 @@ function AISummaryTab({ patientId }: { patientId: string }) {
     );
   }
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("pulse_access_token") : null;
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  async function downloadPdf() {
+    setPdfLoading(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("pulse_access_token") : null;
+      const res = await fetch(`${API_URL}/ai/report/${patientId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pulse-report-${patientId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — user can retry
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -522,14 +544,13 @@ function AISummaryTab({ patientId }: { patientId: string }) {
             <Bot className="h-4 w-4 text-indigo-400" />
             <span className="text-sm font-semibold text-foreground">AI Clinical Summary</span>
           </div>
-          <a
-            href={`${API_URL}/ai/report/${patientId}${token ? `?token=${encodeURIComponent(token)}` : ""}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs px-3 py-1 rounded border border-indigo-700/50 text-indigo-400 hover:bg-indigo-900/30 transition-colors"
+          <button
+            onClick={downloadPdf}
+            disabled={pdfLoading}
+            className="text-xs px-3 py-1 rounded border border-indigo-700/50 text-indigo-400 hover:bg-indigo-900/30 transition-colors disabled:opacity-50"
           >
-            ↓ PDF Report
-          </a>
+            {pdfLoading ? "Generating…" : "↓ PDF Report"}
+          </button>
         </div>
         <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
           {data?.summary}

@@ -17,15 +17,26 @@ import {
 import { cn } from "@pulse/ui";
 
 const PulseLogo = () => (
-  <svg width="40" height="20" viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="110" height="28" viewBox="0 0 220 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Pulse">
     <polyline
-      points="0,20 15,20 22,5 30,35 38,10 46,30 54,20 80,20"
-      stroke="#E11D48"
-      strokeWidth="2.5"
-      fill="none"
+      points="0,28 10,28 15,28 19,12 23,44 27,8 31,40 35,28 45,28"
+      stroke="#e11d48"
+      strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+    <line x1="57" y1="8" x2="57" y2="48" stroke="#c7d2fe" strokeWidth="1.5" />
+    <text
+      x="67"
+      y="40"
+      fontFamily="'Inter','Helvetica Neue',Arial,sans-serif"
+      fontSize="32"
+      fontWeight="800"
+      letterSpacing="-1"
+      fill="#3730a3"
+    >
+      PULSE
+    </text>
   </svg>
 );
 
@@ -87,9 +98,8 @@ export function Sidebar({ userRole, userEmail, userFullName }: SidebarProps) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-border bg-card">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-4 border-b border-border">
+      <div className="flex items-center px-4 py-4 border-b border-border">
         <PulseLogo />
-        <span className="font-bold text-base tracking-tight">Pulse</span>
       </div>
 
       {/* Nav */}
