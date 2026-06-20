@@ -14,14 +14,6 @@ function SettingRow({ label, description, children }: { label: string; descripti
   );
 }
 
-function DisabledToggle({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 opacity-40 cursor-not-allowed" title="Available in v0.3 after adding a Groq key">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <div className="h-5 w-9 rounded-full bg-muted border border-border" />
-    </div>
-  );
-}
 
 export default function SettingsPage() {
   const user = useCurrentUser();
@@ -65,35 +57,48 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* AI — Phase 2 */}
+      {/* AI Copilot */}
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
           AI Copilot
-          <span className="ml-2 text-xs font-normal normal-case text-indigo-400">— unlocks in v0.3 after adding a Groq key</span>
+          <span className="ml-2 text-xs font-normal normal-case text-emerald-400">— active (GROQ_API_KEY set)</span>
         </h2>
         <div className="rounded-lg border border-border bg-card px-4">
           <SettingRow
             label="Default model"
-            description="Groq model used for patient summaries and journey generation"
+            description="Groq model used for patient summaries and streaming chat"
           >
-            <DisabledToggle label="llama-3.3-70b" />
+            <span className="text-xs font-mono rounded bg-indigo-900/30 text-indigo-300 border border-indigo-700/30 px-2 py-0.5">
+              llama-3.3-70b-versatile
+            </span>
           </SettingRow>
           <SettingRow
-            label="Rerank results"
-            description="Use a cross-encoder to rerank RAG retrieval results before answering"
+            label="Reranking"
+            description="Cross-encoder (ms-marco-MiniLM-L-6-v2) reranks RAG candidates before generation"
           >
-            <DisabledToggle label="Off" />
+            <span className="text-xs rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30 px-2 py-0.5">
+              Enabled
+            </span>
           </SettingRow>
           <SettingRow
-            label="Streaming responses"
-            description="Stream the AI copilot token-by-token"
+            label="Streaming"
+            description="Chat responses stream token-by-token via SSE"
           >
-            <DisabledToggle label="On" />
+            <span className="text-xs rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30 px-2 py-0.5">
+              Enabled
+            </span>
+          </SettingRow>
+          <SettingRow
+            label="Knowledge base"
+            description="Guidelines and literature indexed in Quiver (vector search)"
+          >
+            <span className="text-xs text-muted-foreground">13 entries</span>
           </SettingRow>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          To enable: add <code className="font-mono bg-muted/30 px-1 rounded">GROQ_API_KEY=gsk_...</code> to{" "}
-          <code className="font-mono bg-muted/30 px-1 rounded">.env</code> and restart the stack.
+          Model and rerank settings are configured via env vars:{" "}
+          <code className="font-mono bg-muted/30 px-1 rounded">GROQ_MODEL</code>,{" "}
+          <code className="font-mono bg-muted/30 px-1 rounded">RERANK_ENABLED</code>.
         </p>
       </section>
 
@@ -102,7 +107,7 @@ export default function SettingsPage() {
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">About</h2>
         <div className="rounded-lg border border-border bg-card px-4">
           <SettingRow label="Version" description="Pulse release">
-            <span className="text-xs text-muted-foreground font-mono">v0.2.0</span>
+            <span className="text-xs text-muted-foreground font-mono">v0.3.0</span>
           </SettingRow>
           <SettingRow label="Data" description="All patient data is synthetic — generated for demonstration only">
             <span className="text-xs rounded-full bg-amber-900/30 text-amber-300 border border-amber-700/30 px-2 py-0.5">
