@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import auth, dashboard, devices, health, patients, risk, users
+from app.api.routers import ai, auth, dashboard, devices, health, patients, risk, users
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.quiver_client import ensure_collections
@@ -44,3 +44,4 @@ app.include_router(risk.router)
 app.include_router(dashboard.router)
 app.include_router(devices.router)
 app.include_router(users.router)
+app.include_router(ai.router)
