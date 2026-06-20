@@ -70,17 +70,19 @@ class Patient(Base, UUIDMixin, TimestampMixin):
     comorbidities: Mapped[list["Comorbidity"]] = relationship(
         "Comorbidity", back_populates="patient", cascade="all, delete-orphan"
     )
-    labs: Mapped[list["Lab"]] = relationship(
-        "Lab", back_populates="patient", cascade="all, delete-orphan"
-    )
+    labs: Mapped[list["Lab"]] = relationship("Lab", back_populates="patient", cascade="all, delete-orphan")
     medications: Mapped[list["Medication"]] = relationship(
         "Medication", back_populates="patient", cascade="all, delete-orphan"
     )
     vitals: Mapped[list["Vital"]] = relationship(
-        "Vital", back_populates="patient", cascade="all, delete-orphan",
+        "Vital",
+        back_populates="patient",
+        cascade="all, delete-orphan",
         order_by="Vital.taken_at",
     )
     clinical_notes: Mapped[list["ClinicalNote"]] = relationship(
-        "ClinicalNote", back_populates="patient", cascade="all, delete-orphan",
+        "ClinicalNote",
+        back_populates="patient",
+        cascade="all, delete-orphan",
         order_by="ClinicalNote.timestamp",
     )

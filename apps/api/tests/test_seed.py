@@ -1,6 +1,5 @@
 """Verify seed generator output is internally consistent and idempotent-safe."""
 
-
 from app.seed.generators import DEVICE_CATALOG, GUIDELINES_CORPUS, LITERATURE_CORPUS, generate_patients
 
 
@@ -17,7 +16,20 @@ def test_patient_ids_unique():
 
 def test_patient_has_required_fields():
     patients = generate_patients(10)
-    required = {"patient_id", "name", "age", "sex", "mrn", "phase", "planned_intervention", "comorbidities", "labs", "medications", "vitals", "note"}
+    required = {
+        "patient_id",
+        "name",
+        "age",
+        "sex",
+        "mrn",
+        "phase",
+        "planned_intervention",
+        "comorbidities",
+        "labs",
+        "medications",
+        "vitals",
+        "note",
+    }
     for p in patients:
         missing = required - p.keys()
         assert not missing, f"{p['patient_id']} missing fields: {missing}"
@@ -95,10 +107,15 @@ def test_device_catalog_count():
 
 def test_device_has_ifu_fields():
     required = {
-        "manufacturer", "name", "indication",
-        "ifu_proximal_min_mm", "ifu_proximal_max_mm",
-        "ifu_min_neck_length_mm", "ifu_max_neck_angulation_deg",
-        "ifu_iliac_min_mm", "ifu_iliac_max_mm",
+        "manufacturer",
+        "name",
+        "indication",
+        "ifu_proximal_min_mm",
+        "ifu_proximal_max_mm",
+        "ifu_min_neck_length_mm",
+        "ifu_max_neck_angulation_deg",
+        "ifu_iliac_min_mm",
+        "ifu_iliac_max_mm",
         "deployment_steps",
     }
     for d in DEVICE_CATALOG:

@@ -9,14 +9,14 @@ from dataclasses import dataclass
 
 @dataclass
 class CHA2DS2VascInputs:
-    congestive_heart_failure: bool   # 1 point
-    hypertension: bool               # 1 point
-    age_75_or_over: bool             # 2 points
-    diabetes_mellitus: bool          # 1 point
-    stroke_or_tia: bool              # 2 points — prior stroke/TIA/thromboembolism
-    vascular_disease: bool           # 1 point — prior MI, peripheral artery disease, or aortic plaque
-    age_65_to_74: bool               # 1 point (mutually exclusive with age_75_or_over)
-    female_sex: bool                 # 1 point
+    congestive_heart_failure: bool  # 1 point
+    hypertension: bool  # 1 point
+    age_75_or_over: bool  # 2 points
+    diabetes_mellitus: bool  # 1 point
+    stroke_or_tia: bool  # 2 points — prior stroke/TIA/thromboembolism
+    vascular_disease: bool  # 1 point — prior MI, peripheral artery disease, or aortic plaque
+    age_65_to_74: bool  # 1 point (mutually exclusive with age_75_or_over)
+    female_sex: bool  # 1 point
 
 
 @dataclass

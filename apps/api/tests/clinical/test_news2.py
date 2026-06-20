@@ -49,10 +49,12 @@ def test_low_consciousness_scores_3():
 
 def test_total_score_7_is_high():
     """Score ≥ 7 → High response (RCP 2017 threshold)."""
-    result = compute_news2(_normal_patient(
-        respiration_rate=26,   # 3 pts
-        spo2=90.0,             # 3 pts
-        systolic_bp=95,        # 2 pts
-    ))
+    result = compute_news2(
+        _normal_patient(
+            respiration_rate=26,  # 3 pts
+            spo2=90.0,  # 3 pts
+            systolic_bp=95,  # 2 pts
+        )
+    )
     assert result.total_score >= 7
     assert result.response_level == "High"

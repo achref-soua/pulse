@@ -20,7 +20,7 @@ class PatientAnatomy:
     neck_length_mm: float
     neck_angulation_deg: float
     neck_diameter_mm: float
-    iliac_access_min_mm: float   # minimum iliac diameter (limiting side)
+    iliac_access_min_mm: float  # minimum iliac diameter (limiting side)
     distal_landing_diameter_mm: float | None = None
 
 
@@ -29,11 +29,11 @@ class DeviceIFU:
     name: str
     ifu_min_neck_length_mm: float
     ifu_max_neck_angulation_deg: float
-    ifu_proximal_min_mm: float      # min aortic neck diameter for proximal fixation
-    ifu_proximal_max_mm: float      # max aortic neck diameter for proximal fixation
-    ifu_iliac_min_mm: float         # minimum iliac access diameter required
+    ifu_proximal_min_mm: float  # min aortic neck diameter for proximal fixation
+    ifu_proximal_max_mm: float  # max aortic neck diameter for proximal fixation
+    ifu_iliac_min_mm: float  # minimum iliac access diameter required
     ifu_iliac_max_mm: float
-    ifu_distal_min_mm: float        # distal landing zone diameter range
+    ifu_distal_min_mm: float  # distal landing zone diameter range
     ifu_distal_max_mm: float
     oversizing_target_pct: float = 15.0  # typical graft oversizing relative to neck
 
@@ -81,23 +81,27 @@ def assess_ifu_fit(anatomy: PatientAnatomy, device: DeviceIFU) -> IFUFitResult:
 
     # 1. Neck length
     neck_len_status = _margin(anatomy.neck_length_mm, device.ifu_min_neck_length_mm, "min")
-    criteria.append(CriterionResult(
-        name="Proximal neck length",
-        status=neck_len_status,
-        patient_value=anatomy.neck_length_mm,
-        ifu_threshold=f"≥ {device.ifu_min_neck_length_mm} mm",
-        note="" if neck_len_status == Suitability.suitable else "Insufficient seal zone",
-    ))
+    criteria.append(
+        CriterionResult(
+            name="Proximal neck length",
+            status=neck_len_status,
+            patient_value=anatomy.neck_length_mm,
+            ifu_threshold=f"≥ {device.ifu_min_neck_length_mm} mm",
+            note="" if neck_len_status == Suitability.suitable else "Insufficient seal zone",
+        )
+    )
 
     # 2. Neck angulation
     ang_status = _margin(anatomy.neck_angulation_deg, device.ifu_max_neck_angulation_deg, "max")
-    criteria.append(CriterionResult(
-        name="Neck angulation",
-        status=ang_status,
-        patient_value=anatomy.neck_angulation_deg,
-        ifu_threshold=f"≤ {device.ifu_max_neck_angulation_deg}°",
-        note="" if ang_status == Suitability.suitable else "Angulation may compromise seal",
-    ))
+    criteria.append(
+        CriterionResult(
+            name="Neck angulation",
+            status=ang_status,
+            patient_value=anatomy.neck_angulation_deg,
+            ifu_threshold=f"≤ {device.ifu_max_neck_angulation_deg}°",
+            note="" if ang_status == Suitability.suitable else "Angulation may compromise seal",
+        )
+    )
 
     # 3. Proximal neck diameter (with oversizing)
     target_graft_min = device.ifu_proximal_min_mm * (1 + device.oversizing_target_pct / 100)
@@ -111,23 +115,27 @@ def assess_ifu_fit(anatomy: PatientAnatomy, device: DeviceIFU) -> IFUFitResult:
     else:
         neck_diam_status = Suitability.suitable
         neck_note = f"Target graft: {target_graft_min:.0f}–{target_graft_max:.0f} mm"
-    criteria.append(CriterionResult(
-        name="Proximal neck diameter",
-        status=neck_diam_status,
-        patient_value=anatomy.neck_diameter_mm,
-        ifu_threshold=f"{device.ifu_proximal_min_mm}–{device.ifu_proximal_max_mm} mm",
-        note=neck_note,
-    ))
+    criteria.append(
+        CriterionResult(
+            name="Proximal neck diameter",
+            status=neck_diam_status,
+            patient_value=anatomy.neck_diameter_mm,
+            ifu_threshold=f"{device.ifu_proximal_min_mm}–{device.ifu_proximal_max_mm} mm",
+            note=neck_note,
+        )
+    )
 
     # 4. Iliac access
     iliac_status = _margin(anatomy.iliac_access_min_mm, device.ifu_iliac_min_mm, "min")
-    criteria.append(CriterionResult(
-        name="Iliac access diameter",
-        status=iliac_status,
-        patient_value=anatomy.iliac_access_min_mm,
-        ifu_threshold=f"≥ {device.ifu_iliac_min_mm} mm",
-        note="" if iliac_status == Suitability.suitable else "Iliac conduit may be required",
-    ))
+    criteria.append(
+        CriterionResult(
+            name="Iliac access diameter",
+            status=iliac_status,
+            patient_value=anatomy.iliac_access_min_mm,
+            ifu_threshold=f"≥ {device.ifu_iliac_min_mm} mm",
+            note="" if iliac_status == Suitability.suitable else "Iliac conduit may be required",
+        )
+    )
 
     # 5. Distal landing zone (if provided)
     if anatomy.distal_landing_diameter_mm is not None:
@@ -140,13 +148,15 @@ def assess_ifu_fit(anatomy: PatientAnatomy, device: DeviceIFU) -> IFUFitResult:
         else:
             distal_status = Suitability.suitable
             distal_note = ""
-        criteria.append(CriterionResult(
-            name="Distal landing zone",
-            status=distal_status,
-            patient_value=anatomy.distal_landing_diameter_mm,
-            ifu_threshold=f"{device.ifu_distal_min_mm}–{device.ifu_distal_max_mm} mm",
-            note=distal_note,
-        ))
+        criteria.append(
+            CriterionResult(
+                name="Distal landing zone",
+                status=distal_status,
+                patient_value=anatomy.distal_landing_diameter_mm,
+                ifu_threshold=f"{device.ifu_distal_min_mm}–{device.ifu_distal_max_mm} mm",
+                note=distal_note,
+            )
+        )
 
     # Overall verdict
     statuses = {c.status for c in criteria}
@@ -164,7 +174,8 @@ def assess_ifu_fit(anatomy: PatientAnatomy, device: DeviceIFU) -> IFUFitResult:
         recommended_size_note=(
             f"Suggested graft: {anatomy.neck_diameter_mm * (1 + device.oversizing_target_pct / 100):.0f} mm "
             f"(neck {anatomy.neck_diameter_mm:.1f} mm × {100 + device.oversizing_target_pct:.0f}%)"
-            if overall != Suitability.contraindicated else "Not recommended"
+            if overall != Suitability.contraindicated
+            else "Not recommended"
         ),
     )
 
