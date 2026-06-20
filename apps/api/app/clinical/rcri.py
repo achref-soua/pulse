@@ -9,18 +9,18 @@ from dataclasses import dataclass
 
 @dataclass
 class RCRIInputs:
-    high_risk_surgery: bool          # intraperitoneal, intrathoracic, or suprainguinal vascular
-    ischemic_heart_disease: bool     # history of MI, positive ETT, angina, nitrates, Q-waves
-    congestive_heart_failure: bool   # history of CHF, pulmonary edema, PND, or S3/bilateral rales
-    cerebrovascular_disease: bool    # history of TIA or stroke
+    high_risk_surgery: bool  # intraperitoneal, intrathoracic, or suprainguinal vascular
+    ischemic_heart_disease: bool  # history of MI, positive ETT, angina, nitrates, Q-waves
+    congestive_heart_failure: bool  # history of CHF, pulmonary edema, PND, or S3/bilateral rales
+    cerebrovascular_disease: bool  # history of TIA or stroke
     insulin_dependent_diabetes: bool
-    preop_creatinine_gt_2: bool      # serum creatinine > 2.0 mg/dL (> 177 µmol/L)
+    preop_creatinine_gt_2: bool  # serum creatinine > 2.0 mg/dL (> 177 µmol/L)
 
 
 @dataclass
 class RCRIResult:
     score: int
-    risk_class: str      # I, II, III, IV
+    risk_class: str  # I, II, III, IV
     estimated_risk_pct: float
     factors_present: list[str]
 
@@ -43,9 +43,7 @@ _FACTOR_NAMES = {
 
 
 def compute_rcri(inputs: RCRIInputs) -> RCRIResult:
-    factors_present = [
-        name for field, name in _FACTOR_NAMES.items() if getattr(inputs, field)
-    ]
+    factors_present = [name for field, name in _FACTOR_NAMES.items() if getattr(inputs, field)]
     score = len(factors_present)
     # ≥3 factors all map to the same risk class
     score_capped = min(score, 3)

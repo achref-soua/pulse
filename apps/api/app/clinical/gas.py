@@ -10,10 +10,10 @@ from dataclasses import dataclass
 @dataclass
 class GASInputs:
     age: int
-    shock: bool              # systolic BP < 90 mmHg on admission
-    myocardial_disease: bool # history of MI, CCF, or angina
+    shock: bool  # systolic BP < 90 mmHg on admission
+    myocardial_disease: bool  # history of MI, CCF, or angina
     cerebrovascular_disease: bool
-    renal_disease: bool      # any history of renal impairment
+    renal_disease: bool  # any history of renal impairment
 
 
 @dataclass

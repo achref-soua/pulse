@@ -17,7 +17,7 @@ from dataclasses import dataclass
 class EuroSCORE2Inputs:
     age: int
     female: bool
-    renal_dysfunction: str        # "none" | "moderate" | "dialysis"
+    renal_dysfunction: str  # "none" | "moderate" | "dialysis"
     extracardiac_arteriopathy: bool
     poor_mobility: bool
     previous_cardiac_surgery: bool
@@ -25,11 +25,11 @@ class EuroSCORE2Inputs:
     active_endocarditis: bool
     critical_preop_state: bool
     diabetes_on_insulin: bool
-    nyha_class: int               # 1 | 2 | 3 | 4
-    ccs_angina: int               # 0 = no angina, 1–4 = CCS class
+    nyha_class: int  # 1 | 2 | 3 | 4
+    ccs_angina: int  # 0 = no angina, 1–4 = CCS class
     ejection_fraction_pct: float
-    recent_mi: bool               # MI within 90 days
-    pulmonary_hypertension: str   # "none" | "moderate" | "severe"
+    recent_mi: bool  # MI within 90 days
+    pulmonary_hypertension: str  # "none" | "moderate" | "severe"
     emergency: bool
     other_than_isolated_cabg: bool
     thoracic_aorta_surgery: bool
@@ -51,9 +51,9 @@ class EuroSCORE2Result:
 _INTERCEPT = -5.324537
 
 _COEFFICIENTS: dict[str, float] = {
-    "age_gt_60": 0.0285181,        # per year above 60
+    "age_gt_60": 0.0285181,  # per year above 60
     "female": 0.2196434,
-    "renal_moderate": 0.303553,    # eGFR 50–85
+    "renal_moderate": 0.303553,  # eGFR 50–85
     "renal_dialysis": 0.9058694,
     "extracardiac_arteriopathy": 0.5360268,
     "poor_mobility": 0.2196434,

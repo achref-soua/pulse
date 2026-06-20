@@ -38,13 +38,15 @@ async def list_patients(
     result = await db.execute(q)
     patients = result.scalars().all()
 
-    db.add(AuditLog(
-        user_id=current_user.id,
-        action="list",
-        entity="patient",
-        entity_id=f"count={len(patients)} filters=phase:{phase},intervention:{intervention}",
-        ip_address=request.client.host if request.client else None,
-    ))
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="list",
+            entity="patient",
+            entity_id=f"count={len(patients)} filters=phase:{phase},intervention:{intervention}",
+            ip_address=request.client.host if request.client else None,
+        )
+    )
 
     return patients
 

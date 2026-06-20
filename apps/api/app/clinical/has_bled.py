@@ -9,15 +9,15 @@ from dataclasses import dataclass
 
 @dataclass
 class HASBLEDInputs:
-    hypertension_uncontrolled: bool   # SBP > 160 mmHg — 1 point
-    renal_dysfunction: bool           # dialysis, transplant, or creatinine > 200 µmol/L — 1 point
-    liver_dysfunction: bool           # cirrhosis or bilirubin >2x + AST/ALT/ALP >3x — 1 point
-    stroke_history: bool              # 1 point
-    bleeding_predisposition: bool     # bleeding history or predisposition — 1 point
-    labile_inr: bool                  # TTR < 60% — 1 point
-    elderly: bool                     # age > 65 — 1 point
-    antiplatelet_or_nsaid: bool       # 1 point
-    alcohol: bool                     # ≥8 drinks/week — 1 point
+    hypertension_uncontrolled: bool  # SBP > 160 mmHg — 1 point
+    renal_dysfunction: bool  # dialysis, transplant, or creatinine > 200 µmol/L — 1 point
+    liver_dysfunction: bool  # cirrhosis or bilirubin >2x + AST/ALT/ALP >3x — 1 point
+    stroke_history: bool  # 1 point
+    bleeding_predisposition: bool  # bleeding history or predisposition — 1 point
+    labile_inr: bool  # TTR < 60% — 1 point
+    elderly: bool  # age > 65 — 1 point
+    antiplatelet_or_nsaid: bool  # 1 point
+    alcohol: bool  # ≥8 drinks/week — 1 point
 
 
 @dataclass

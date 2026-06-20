@@ -32,7 +32,7 @@ def test_ideal_anatomy_is_suitable():
 def test_short_neck_is_contraindicated():
     anatomy = PatientAnatomy(
         max_diameter_mm=60.0,
-        neck_length_mm=5.0,       # well below 15 mm minimum
+        neck_length_mm=5.0,  # well below 15 mm minimum
         neck_angulation_deg=20.0,
         neck_diameter_mm=24.0,
         iliac_access_min_mm=10.0,
@@ -46,7 +46,7 @@ def test_short_neck_is_contraindicated():
 def test_borderline_neck_length():
     anatomy = PatientAnatomy(
         max_diameter_mm=55.0,
-        neck_length_mm=13.6,      # within 10% of 15.0 minimum → borderline
+        neck_length_mm=13.6,  # within 10% of 15.0 minimum → borderline
         neck_angulation_deg=20.0,
         neck_diameter_mm=24.0,
         iliac_access_min_mm=10.0,
@@ -59,8 +59,11 @@ def test_borderline_neck_length():
 
 def test_rank_devices_orders_by_suitability():
     bad_anatomy = PatientAnatomy(
-        max_diameter_mm=55.0, neck_length_mm=5.0, neck_angulation_deg=80.0,
-        neck_diameter_mm=24.0, iliac_access_min_mm=10.0,
+        max_diameter_mm=55.0,
+        neck_length_mm=5.0,
+        neck_angulation_deg=80.0,
+        neck_diameter_mm=24.0,
+        iliac_access_min_mm=10.0,
     )
     device2 = DeviceIFU(
         name="WiderDevice",

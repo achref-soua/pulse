@@ -10,19 +10,19 @@ from dataclasses import dataclass
 
 @dataclass
 class NEWS2Inputs:
-    respiration_rate: int        # breaths per minute
-    spo2: float                  # SpO2 percentage
+    respiration_rate: int  # breaths per minute
+    spo2: float  # SpO2 percentage
     on_supplemental_oxygen: bool
-    systolic_bp: int             # mmHg
-    heart_rate: int              # bpm
-    consciousness: str           # "A" = Alert, "V/P/U" = any other → score 3
-    temperature: float           # Celsius
+    systolic_bp: int  # mmHg
+    heart_rate: int  # bpm
+    consciousness: str  # "A" = Alert, "V/P/U" = any other → score 3
+    temperature: float  # Celsius
 
 
 @dataclass
 class NEWS2Result:
     total_score: int
-    response_level: str          # Low / Medium / High
+    response_level: str  # Low / Medium / High
     individual_scores: dict[str, int]
 
 

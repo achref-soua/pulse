@@ -30,9 +30,7 @@ def run_migrations_offline() -> None:
 async def run_migrations_online() -> None:
     connectable = create_async_engine(settings.database_url)
     async with connectable.connect() as connection:
-        await connection.run_sync(
-            lambda conn: context.configure(conn, target_metadata=target_metadata)
-        )
+        await connection.run_sync(lambda conn: context.configure(conn, target_metadata=target_metadata))
         async with connection.begin():
             await connection.run_sync(lambda _: context.run_migrations())
     await connectable.dispose()
