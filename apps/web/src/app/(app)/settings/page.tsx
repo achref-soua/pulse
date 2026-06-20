@@ -107,7 +107,7 @@ export default function SettingsPage() {
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">About</h2>
         <div className="rounded-lg border border-border bg-card px-4">
           <SettingRow label="Version" description="Pulse release">
-            <span className="text-xs text-muted-foreground font-mono">v0.3.0</span>
+            <span className="text-xs text-muted-foreground font-mono">v1.0.0</span>
           </SettingRow>
           <SettingRow label="Data" description="All patient data is synthetic — generated for demonstration only">
             <span className="text-xs rounded-full bg-amber-900/30 text-amber-300 border border-amber-700/30 px-2 py-0.5">
