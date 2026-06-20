@@ -448,17 +448,127 @@ function PostOpTab({ vitals, patientId }: { vitals: Vital[]; patientId: string }
   );
 }
 
-/* ── AI Summary Tab (stub) ── */
-function AISummaryTab() {
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-card/50 p-10 flex flex-col items-center gap-3 text-center">
-      <Bot className="h-10 w-10 text-muted-foreground/50" />
-      <div>
-        <p className="text-sm font-medium text-foreground">AI Summary — coming in v0.3</p>
-        <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-          Paste your <code className="font-mono">GROQ_API_KEY</code> into <code className="font-mono">.env</code> and restart to unlock the AI Copilot with cited, tool-grounded patient summaries.
+/* ── AI Summary Tab ── */
+function AISummaryTab({ patientId }: { patientId: string }) {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["ai-summary", patientId],
+    queryFn: () => api.post<{ patient_id: string; summary: string; sources: { id: string; type: string; title: string; body: string; source: string }[] }>(
+      `/ai/patient-summary/${patientId}`, {}
+    ),
+    enabled: false,
+    retry: false,
+  });
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+  if (!data && !isLoading && !error) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-8 flex flex-col items-center gap-4 text-center">
+        <Bot className="h-10 w-10 text-indigo-400" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">AI Clinical Summary</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+            Generate a Groq-powered, RAG-grounded clinical summary for this patient using guidelines from the knowledge base.
+          </p>
+        </div>
+        <button
+          onClick={() => refetch()}
+          className="px-4 py-2 rounded-md bg-indigo-700 hover:bg-indigo-600 text-white text-sm font-medium transition-colors"
+        >
+          Generate Summary
+        </button>
+        <p className="text-xs text-rose-400/80">
+          ⚠️ Educational demo on synthetic data — not for clinical use; not medical advice.
         </p>
       </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-8 flex flex-col items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Bot className="h-5 w-5 animate-pulse text-indigo-400" />
+          Generating AI summary via Groq…
+        </div>
+        <div className="w-full space-y-2 mt-2">
+          {[1,2,3,4].map((i) => (
+            <div key={i} className={`h-3 bg-muted/40 animate-pulse rounded ${i === 4 ? "w-2/3" : "w-full"}`} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    const msg = (error as Error).message;
+    return (
+      <div className="rounded-lg border border-border bg-card p-6 space-y-3">
+        <p className="text-sm font-medium text-rose-400">Summary generation failed</p>
+        <p className="text-xs text-muted-foreground">{msg.includes("GROQ") || msg.includes("503") ? "AI features require GROQ_API_KEY — add it to .env and restart the stack." : msg}</p>
+        <button onClick={() => refetch()} className="text-xs text-indigo-400 hover:underline">Retry</button>
+      </div>
+    );
+  }
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("pulse_access_token") : null;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary card */}
+      <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-indigo-400" />
+            <span className="text-sm font-semibold text-foreground">AI Clinical Summary</span>
+          </div>
+          <a
+            href={`${API_URL}/ai/report/${patientId}${token ? `?token=${encodeURIComponent(token)}` : ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs px-3 py-1 rounded border border-indigo-700/50 text-indigo-400 hover:bg-indigo-900/30 transition-colors"
+          >
+            ↓ PDF Report
+          </a>
+        </div>
+        <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+          {data?.summary}
+        </div>
+        <p className="text-xs text-rose-400/80 mt-2">
+          ⚠️ Educational demo on synthetic data — not for clinical use; not medical advice.
+        </p>
+      </div>
+
+      {/* Sources */}
+      {data?.sources && data.sources.length > 0 && (
+        <div className="rounded-lg border border-border bg-card divide-y divide-border">
+          <div className="px-4 py-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Knowledge Base Sources ({data.sources.length})
+            </p>
+          </div>
+          {data.sources.map((s, i) => (
+            <details key={s.id} className="group">
+              <summary className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-muted/20 list-none">
+                <span className="text-xs font-mono text-muted-foreground shrink-0">[{i + 1}]</span>
+                <span className="text-xs font-medium text-foreground flex-1">{s.title}</span>
+                <span className="text-xs capitalize rounded-full px-1.5 py-0.5 bg-indigo-900/30 text-indigo-300">{s.type}</span>
+              </summary>
+              <div className="px-4 pb-3 pt-1 text-xs text-muted-foreground leading-relaxed">
+                {s.body}
+                <p className="mt-1 italic">{s.source}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={() => refetch()}
+        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        Regenerate
+      </button>
     </div>
   );
 }
@@ -568,7 +678,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ id: st
         {activeTab === "postop" && patient.phase === "post" && (
           <PostOpTab vitals={patient.vitals} patientId={patient.patient_id} />
         )}
-        {activeTab === "ai" && <AISummaryTab />}
+        {activeTab === "ai" && <AISummaryTab patientId={patient.patient_id} />}
       </div>
     </div>
   );

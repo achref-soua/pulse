@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BarChart2,
+  BookOpen,
   ChevronRight,
   Cpu,
   LayoutDashboard,
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/risk", label: "Risk Tools", icon: ShieldCheck },
   { href: "/devices", label: "Devices", icon: Cpu },
   { href: "/monitoring", label: "Monitoring", icon: Activity },
+  { href: "/knowledge", label: "Knowledge Base", icon: BookOpen },
 ];
 
 const adminItems = [
