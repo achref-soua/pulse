@@ -2,6 +2,7 @@ from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock
 
 import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -11,31 +12,28 @@ from app.core.security import hash_password
 from app.main import app
 from app.models.user import User, UserRole
 
-TEST_DB_URL = "postgresql+asyncpg://pulse:pulse_test@localhost:5432/pulse_test"
+TEST_DB_URL = "postgresql+asyncpg://pulse:pulse_dev_only@localhost:5432/pulse_test"
 
 
-@pytest.fixture(scope="session")
-def anyio_backend():
-    return "asyncio"
-
-
-@pytest.fixture(scope="session")
-async def engine():
-    _engine = create_async_engine(TEST_DB_URL, echo=False)
-    async with _engine.begin() as conn:
+@pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
+async def _create_tables():
+    engine = create_async_engine(TEST_DB_URL, echo=False)
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield _engine
-    async with _engine.begin() as conn:
+    yield
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    await _engine.dispose()
+    await engine.dispose()
 
 
-@pytest.fixture
-async def db(engine) -> AsyncGenerator[AsyncSession, None]:
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with session_factory() as session:
+@pytest_asyncio.fixture
+async def db(_create_tables) -> AsyncGenerator[AsyncSession, None]:
+    engine = create_async_engine(TEST_DB_URL, echo=False)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with factory() as session:
         yield session
         await session.rollback()
+    await engine.dispose()
 
 
 @pytest.fixture
@@ -50,7 +48,7 @@ def mock_quiver():
     return mock
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(db, mock_quiver) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_quiver_client] = lambda: mock_quiver
@@ -61,7 +59,7 @@ async def client(db, mock_quiver) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def surgeon_user(db) -> User:
     user = User(
         email="surgeon@test.pulse",

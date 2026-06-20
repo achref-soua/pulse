@@ -26,7 +26,9 @@ class Conversation(Base, UUIDMixin):
 
     user: Mapped["User"] = relationship("User")
     messages: Mapped[list["Message"]] = relationship(
-        "Message", back_populates="conversation", cascade="all, delete-orphan",
+        "Message",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
         order_by="Message.created_at",
     )
 

@@ -8,8 +8,9 @@ Create Date: 2024-01-01 00:00:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
+
+from alembic import op
 
 revision: str = "0001"
 down_revision: str | None = None
@@ -25,7 +26,9 @@ def upgrade() -> None:
         sa.Column("email", sa.String(320), nullable=False),
         sa.Column("hashed_password", sa.String(128), nullable=False),
         sa.Column("full_name", sa.String(200), nullable=False),
-        sa.Column("role", sa.Enum("surgeon", "anesthetist", "nurse", "admin", name="userrole"), nullable=False),
+        sa.Column(
+            "role", sa.Enum("surgeon", "anesthetist", "nurse", "admin", name="userrole"), nullable=False
+        ),
         sa.Column("is_active", sa.Boolean, nullable=False, server_default="true"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
@@ -42,7 +45,11 @@ def upgrade() -> None:
         sa.Column("dob", sa.Date, nullable=True),
         sa.Column("sex", sa.String(1), nullable=False),
         sa.Column("mrn", sa.String(20), nullable=False),
-        sa.Column("aneurysm_type", sa.Enum("infrarenal_AAA", "juxtarenal_AAA", "TAA", "ascending", name="aneurysmtype"), nullable=True),
+        sa.Column(
+            "aneurysm_type",
+            sa.Enum("infrarenal_AAA", "juxtarenal_AAA", "TAA", "ascending", name="aneurysmtype"),
+            nullable=True,
+        ),
         sa.Column("location", sa.String(100), nullable=True),
         sa.Column("max_diameter_mm", sa.Float, nullable=True),
         sa.Column("neck_length_mm", sa.Float, nullable=True),
@@ -53,7 +60,11 @@ def upgrade() -> None:
         sa.Column("tortuosity", sa.String(20), nullable=True),
         sa.Column("ct_scan_date", sa.Date, nullable=True),
         sa.Column("phase", sa.Enum("pre", "intra", "post", name="phase"), nullable=False),
-        sa.Column("planned_intervention", sa.Enum("EVAR", "TEVAR", "open_graft", "surveillance", name="plannedintervention"), nullable=False),
+        sa.Column(
+            "planned_intervention",
+            sa.Enum("EVAR", "TEVAR", "open_graft", "surveillance", name="plannedintervention"),
+            nullable=False,
+        ),
         sa.Column("surgery_date", sa.Date, nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
@@ -65,7 +76,9 @@ def upgrade() -> None:
     op.create_table(
         "comorbidities",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("htn", sa.Boolean, server_default="false"),
         sa.Column("dm", sa.Boolean, server_default="false"),
         sa.Column("insulin_dependent", sa.Boolean, server_default="false"),
@@ -84,7 +97,9 @@ def upgrade() -> None:
     op.create_table(
         "labs",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("taken_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("creatinine", sa.Float, nullable=True),
         sa.Column("egfr", sa.Float, nullable=True),
@@ -100,9 +115,24 @@ def upgrade() -> None:
     op.create_table(
         "medications",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("name", sa.String(200), nullable=False),
-        sa.Column("med_class", sa.Enum("antiplatelet", "anticoagulant", "statin", "beta_blocker", "ACEi/ARB", "diuretic", "other", name="medclass"), nullable=False),
+        sa.Column(
+            "med_class",
+            sa.Enum(
+                "antiplatelet",
+                "anticoagulant",
+                "statin",
+                "beta_blocker",
+                "ACEi/ARB",
+                "diuretic",
+                "other",
+                name="medclass",
+            ),
+            nullable=False,
+        ),
         sa.Column("dose", sa.String(50), nullable=True),
         sa.Column("route", sa.String(20), nullable=True),
     )
@@ -111,7 +141,9 @@ def upgrade() -> None:
     op.create_table(
         "vitals",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("taken_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("rr", sa.Integer, nullable=True),
         sa.Column("spo2", sa.Float, nullable=True),
@@ -150,8 +182,14 @@ def upgrade() -> None:
     op.create_table(
         "clinical_notes",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("note_type", sa.Enum("referral", "pre_op_assessment", "op_note", "progress", "discharge", name="notetype"), nullable=False),
+        sa.Column(
+            "patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
+        ),
+        sa.Column(
+            "note_type",
+            sa.Enum("referral", "pre_op_assessment", "op_note", "progress", "discharge", name="notetype"),
+            nullable=False,
+        ),
         sa.Column("author_role", sa.String(20), nullable=False),
         sa.Column("timestamp", sa.DateTime(timezone=True), nullable=False),
         sa.Column("body", sa.Text, nullable=False),
@@ -162,7 +200,9 @@ def upgrade() -> None:
     op.create_table(
         "conversations",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("title", sa.String(200), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
     )
@@ -171,7 +211,12 @@ def upgrade() -> None:
     op.create_table(
         "messages",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("conversation_id", UUID(as_uuid=True), sa.ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "conversation_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("conversations.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("role", sa.String(20), nullable=False),
         sa.Column("content", sa.Text, nullable=False),
         sa.Column("routing_metadata", sa.JSON, nullable=True),
@@ -182,8 +227,12 @@ def upgrade() -> None:
     op.create_table(
         "risk_assessments",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "patient_id", UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
+        ),
+        sa.Column(
+            "user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        ),
         sa.Column("score_type", sa.String(50), nullable=False),
         sa.Column("inputs", sa.JSON, nullable=False),
         sa.Column("result", sa.JSON, nullable=False),
@@ -194,7 +243,9 @@ def upgrade() -> None:
     op.create_table(
         "audit_log",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        ),
         sa.Column("action", sa.String(100), nullable=False),
         sa.Column("entity", sa.String(100), nullable=False),
         sa.Column("entity_id", sa.String(100), nullable=True),
