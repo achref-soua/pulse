@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" fill="none">
+  <!-- EKG waveform mark -->
+  <polyline
+    points="0,28 10,28 15,28 19,12 23,44 27,8 31,40 35,28 45,28"
+    stroke="#e11d48"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <!-- Divider -->
+  <line x1="57" y1="8" x2="57" y2="48" stroke="#c7d2fe" stroke-width="1.5"/>
+  <!-- P -->
+  <text
+    x="67"
+    y="40"
+    font-family="'Inter','Helvetica Neue',Arial,sans-serif"
+    font-size="32"
+    font-weight="800"
+    letter-spacing="-1"
+    fill="#3730a3"
+  >PULSE</text>
+</svg>
