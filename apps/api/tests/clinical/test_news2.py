@@ -7,15 +7,15 @@ from app.clinical.news2 import NEWS2Inputs, compute_news2
 
 
 def _normal_patient(**overrides):
-    defaults = dict(
-        respiration_rate=16,
-        spo2=97.0,
-        on_supplemental_oxygen=False,
-        systolic_bp=120,
-        heart_rate=75,
-        consciousness="A",
-        temperature=37.0,
-    )
+    defaults = {
+        "respiration_rate": 16,
+        "spo2": 97.0,
+        "on_supplemental_oxygen": False,
+        "systolic_bp": 120,
+        "heart_rate": 75,
+        "consciousness": "A",
+        "temperature": 37.0,
+    }
     defaults.update(overrides)
     return NEWS2Inputs(**defaults)
 

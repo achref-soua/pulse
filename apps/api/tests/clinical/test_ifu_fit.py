@@ -62,10 +62,6 @@ def test_rank_devices_orders_by_suitability():
         max_diameter_mm=55.0, neck_length_mm=5.0, neck_angulation_deg=80.0,
         neck_diameter_mm=24.0, iliac_access_min_mm=10.0,
     )
-    good_anatomy = PatientAnatomy(
-        max_diameter_mm=55.0, neck_length_mm=25.0, neck_angulation_deg=20.0,
-        neck_diameter_mm=24.0, iliac_access_min_mm=10.0,
-    )
     device2 = DeviceIFU(
         name="WiderDevice",
         ifu_min_neck_length_mm=5.0,

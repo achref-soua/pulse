@@ -44,13 +44,13 @@ async def test_login_invalid_credentials(client):
 async def test_refresh_token(client):
     await client.post("/auth/register", json={
         "email": "refresh@test.pulse",
-        "password": "pass-123",
+        "password": "pass-word-123",
         "full_name": "Refresh User",
         "role": "nurse",
     })
     login = await client.post("/auth/login", json={
         "email": "refresh@test.pulse",
-        "password": "pass-123",
+        "password": "pass-word-123",
     })
     tokens = login.json()
 
