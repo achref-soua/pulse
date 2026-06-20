@@ -1,0 +1,56 @@
+# Manual security scan — trigger via GitHub UI → Actions → Security Scan → Run workflow.
+name: Security Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v4
+      - name: pip-audit
+        working-directory: apps/api
+        run: |
+          uv sync
+          uv run pip-audit
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level=high
+
+  container-scan:
+    name: Trivy container scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build api image
+        run: docker build -f infra/docker/Dockerfile.api -t pulse-api:scan apps/api
+      - name: Scan api image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: pulse-api:scan
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH

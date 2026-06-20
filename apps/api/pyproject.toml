@@ -1,0 +1,70 @@
+[project]
+name = "pulse-api"
+version = "0.1.0"
+description = "Pulse API — aortic surgery intelligence backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.14.0",
+    "asyncpg>=0.30.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]>=3.3.0",
+    "httpx>=0.28.0",
+    "redis[hiredis]>=5.2.0",
+    "sentence-transformers>=3.3.1",
+    "langchain>=0.3.17",
+    "langchain-groq>=0.2.4",
+    "langgraph>=0.2.67",
+    "langgraph-checkpoint-redis>=0.0.4",
+    "faker>=33.3.1",
+    "quiver-client",
+    "reportlab>=4.2.5",
+    "python-multipart>=0.0.20",
+    "structlog>=24.4.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+    "mypy>=1.13.0",
+    "ruff>=0.9.0",
+    "black>=24.10.0",
+    "pip-audit>=2.7.3",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "S", "B", "A", "C4", "T20"]
+ignore = [
+    "S101",   # assert is fine in tests
+    "B008",   # FastAPI Depends() in defaults is the standard pattern
+    "S105",   # dev-only hardcoded default credentials are documented
+    "S104",   # 0.0.0.0 binding is intentional for Docker
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.uv.sources]
+quiver-client = { path = "../../../quiver/sdks/python", editable = true }
