@@ -57,9 +57,9 @@ tasks:
     cmd: pnpm playwright test
 
   screenshots:
-    desc: Capture screenshots of all screens to docs/assets/
+    desc: Capture screenshots of all screens to docs/assets/ (requires running stack)
     dir: apps/web
-    cmd: pnpm playwright test --project=screenshots
+    cmd: pnpm screenshots
 
   openapi-types:
     desc: Generate TypeScript types from the FastAPI OpenAPI schema

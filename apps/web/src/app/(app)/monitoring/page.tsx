@@ -21,8 +21,6 @@ interface PatientDetail extends Patient {
   comorbidities: unknown[]; labs: unknown[]; medications: unknown[];
   vitals: Vital[]; clinical_notes: unknown[];
 }
-interface News2Result { total_score: number; response_level: string; }
-
 function news2Score(v: Vital): number {
   const rr = v.rr ?? 16;
   const spo2 = v.spo2 ?? 98;
