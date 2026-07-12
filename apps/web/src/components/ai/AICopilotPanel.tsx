@@ -134,7 +134,7 @@ export function AICopilotPanel({ onClose }: { onClose: () => void }) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <Bot className="h-4 w-4 text-indigo-400" />
+          <Bot className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">AI Copilot</span>
           {patientName && (
             <span className="text-xs text-muted-foreground">· {patientName}</span>
@@ -155,8 +155,8 @@ export function AICopilotPanel({ onClose }: { onClose: () => void }) {
             <div
               className={`max-w-[88%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
                 m.role === "user"
-                  ? "bg-indigo-700/60 text-white"
-                  : "bg-muted/30 text-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/50 text-foreground"
               }`}
             >
               {m.content || (streaming && i === messages.length - 1 ? (
@@ -166,7 +166,7 @@ export function AICopilotPanel({ onClose }: { onClose: () => void }) {
                 <div className="mt-2 pt-2 border-t border-border/50 space-y-0.5">
                   {m.sources.slice(0, 3).map((s) => (
                     <div key={s.id} className="flex items-start gap-1">
-                      <BookOpen className="h-2.5 w-2.5 mt-0.5 shrink-0 text-indigo-400" />
+                      <BookOpen className="mt-0.5 h-2.5 w-2.5 shrink-0 text-primary" />
                       <span className="text-xs text-muted-foreground leading-snug">{s.title}</span>
                     </div>
                   ))}
@@ -192,12 +192,12 @@ export function AICopilotPanel({ onClose }: { onClose: () => void }) {
           placeholder="Ask about guidelines, anatomy, risk…"
           rows={2}
           disabled={streaming}
-          className="flex-1 resize-none rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-700 disabled:opacity-50 placeholder:text-muted-foreground"
+          className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         />
         <button
           onClick={send}
           disabled={!input.trim() || streaming}
-          className="shrink-0 flex items-center justify-center h-9 w-9 rounded-md bg-indigo-700 hover:bg-indigo-600 text-white transition-colors disabled:opacity-40"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
         >
           {streaming ? (
             <Loader2 className="h-4 w-4 animate-spin" />
