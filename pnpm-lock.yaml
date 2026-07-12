@@ -65,6 +65,9 @@ importers:
       next:
         specifier: ^15.3.3
         version: 15.5.19(@babel/core@7.29.7)(@playwright/test@1.61.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: ^19.1.0
         version: 19.2.7
@@ -83,6 +86,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.0
         version: 3.6.0
+      tailwindcss-animate:
+        specifier: ^1.0.7
+        version: 1.0.7(tailwindcss@3.4.19(tsx@4.22.4))
       zod:
         specifier: ^3.24.4
         version: 3.25.76
@@ -2843,6 +2849,12 @@ packages:
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
 
+  next-themes@0.4.6:
+    resolution: {integrity: sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==}
+    peerDependencies:
+      react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
   next@15.5.19:
     resolution: {integrity: sha512-xNOW6tYshGX1/Oi3F8uuk4gpDeWsSUE/1Z0G5uUMekIxaQ0xc03UXd9II0VQHYMWviMeA0OHpJFAKsHf8bTYVg==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
@@ -3356,6 +3368,11 @@ packages:
 
   tailwind-merge@3.6.0:
     resolution: {integrity: sha512-uxL7qAVQriqRQPAyK3pj66VqskWqoZ37PW94jwOTwNfq/z9oyu1V+eqrZqtR2+fCiXdYOZe/Modt8GtvqNzu+w==}
+
+  tailwindcss-animate@1.0.7:
+    resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
+    peerDependencies:
+      tailwindcss: '>=3.0.0 || insiders'
 
   tailwindcss@3.4.19:
     resolution: {integrity: sha512-3ofp+LL8E+pK/JuPLPggVAIaEuhvIz4qNcf3nA1Xn2o/7fb7s/TYpHhwGDv1ZU3PkBluUVaF8PyCHcm48cKLWQ==}
@@ -6291,6 +6308,11 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
+  next-themes@0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+    dependencies:
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+
   next@15.5.19(@babel/core@7.29.7)(@playwright/test@1.61.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       '@next/env': 15.5.19
@@ -6895,6 +6917,10 @@ snapshots:
   symbol-tree@3.2.4: {}
 
   tailwind-merge@3.6.0: {}
+
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.19(tsx@4.22.4)):
+    dependencies:
+      tailwindcss: 3.4.19(tsx@4.22.4)
 
   tailwindcss@3.4.19(tsx@4.22.4):
     dependencies:
