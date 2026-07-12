@@ -19,29 +19,36 @@ _CLINICAL_ROLES = (UserRole.surgeon, UserRole.anesthetist, UserRole.nurse, UserR
 async def _news2_high_count(db: AsyncSession) -> int:
     """Count post-phase patients whose most-recent vitals suggest a high NEWS2 score.
 
-    High NEWS2 (≥7) is approximated by single-parameter red flags:
-    RR ≥ 25, SpO2 ≤ 91, systolic BP ≤ 90, HR ≥ 131, or temp ≤ 35.0.
-    This is a database-level proxy; exact scoring uses the clinical engine.
+    High NEWS2 (≥7) is approximated by single-parameter red flags on each
+    patient's most-recent vitals: RR ≥ 25, SpO2 ≤ 91, systolic BP ≤ 90,
+    HR ≥ 131, or temp ≤ 35.0. This is a database-level proxy; exact scoring
+    uses the clinical engine.
     """
-    latest_vital_ids = (
-        select(func.max(Vital.id).label("vid"))
+    # Rank each post-phase patient's vitals by recency (ids are UUIDs, so order
+    # by the timestamp, not the id) and keep only the latest row per patient.
+    rn = (
+        func.row_number()
+        .over(partition_by=Vital.patient_id, order_by=Vital.taken_at.desc())
+        .label("rn")
+    )
+    latest = (
+        select(Vital.rr, Vital.spo2, Vital.systolic_bp, Vital.heart_rate, Vital.temp_c, rn)
         .join(Patient, Patient.id == Vital.patient_id)
         .where(Patient.phase == Phase.post)
-        .group_by(Vital.patient_id)
-        .scalar_subquery()
+        .subquery()
     )
     result = await db.execute(
         select(func.count())
-        .select_from(Vital)
+        .select_from(latest)
         .where(
             and_(
-                Vital.id.in_(latest_vital_ids),
+                latest.c.rn == 1,
                 (
-                    (Vital.rr >= 25)
-                    | (Vital.spo2 <= 91)
-                    | (Vital.systolic_bp <= 90)
-                    | (Vital.heart_rate >= 131)
-                    | (Vital.temp_c <= 35.0)
+                    (latest.c.rr >= 25)
+                    | (latest.c.spo2 <= 91)
+                    | (latest.c.systolic_bp <= 90)
+                    | (latest.c.heart_rate >= 131)
+                    | (latest.c.temp_c <= 35.0)
                 ),
             )
         )
