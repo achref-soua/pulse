@@ -95,13 +95,13 @@ function PatientsContent() {
             placeholder="Search name or ID…"
             value={search}
             onChange={(e) => setParam("search", e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-indigo-700"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <select
           value={phase}
           onChange={(e) => setParam("phase", e.target.value)}
-          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-700 text-foreground"
+          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
         >
           {PHASES.map((p) => (
             <option key={p} value={p}>
@@ -112,7 +112,7 @@ function PatientsContent() {
         <select
           value={intervention}
           onChange={(e) => setParam("intervention", e.target.value)}
-          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-700 text-foreground"
+          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
         >
           {INTERVENTIONS.map((i) => (
             <option key={i} value={i}>
@@ -177,10 +177,10 @@ function PatientsContent() {
                       <span
                         className={`text-xs font-medium capitalize ${
                           p.phase === "post"
-                            ? "text-emerald-400"
+                            ? "text-success"
                             : p.phase === "intra"
-                            ? "text-amber-400"
-                            : "text-indigo-400"
+                            ? "text-warning"
+                            : "text-primary"
                         }`}
                       >
                         {p.phase}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useChartColors } from "@/lib/chartTheme";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
@@ -44,14 +45,6 @@ interface PatientListItem {
   planned_intervention: string;
 }
 
-const PHASE_COLORS: Record<string, string> = {
-  pre: "#6366f1",
-  intra: "#f59e0b",
-  post: "#10b981",
-};
-
-const INTERVENTION_COLORS = ["#6366f1", "#8b5cf6", "#06b6d4", "#64748b"];
-
 function KpiCard({
   label,
   value,
@@ -69,8 +62,8 @@ function KpiCard({
     <div className="rounded-lg border border-border bg-card p-5">
       <div className="flex items-start justify-between mb-3">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
-        <div className={`rounded-md p-1.5 ${accent ?? "bg-indigo-900/40"}`}>
-          <Icon className="h-4 w-4 text-indigo-300" />
+        <div className={`rounded-md p-1.5 ${accent ?? "bg-primary/12"}`}>
+          <Icon className="h-4 w-4 text-primary" />
         </div>
       </div>
       <p className="text-3xl font-bold text-foreground">{value}</p>
@@ -121,6 +114,17 @@ export default function DashboardPage() {
   });
   const interventionData = Object.entries(interventionCounts).map(([name, value]) => ({ name, value }));
 
+  const cc = useChartColors();
+  const phaseColor: Record<string, string> = { pre: cc.chart[0], intra: cc.chart[2], post: cc.chart[1] };
+  const interventionColors = [cc.chart[0], cc.chart[3], cc.chart[1], cc.chart[4]];
+  const tooltipStyle = {
+    backgroundColor: cc.tooltipBg,
+    border: `1px solid ${cc.tooltipBorder}`,
+    borderRadius: 8,
+    color: cc.tooltipText,
+    fontSize: 12,
+  };
+
   return (
     <div className="px-6 py-6 space-y-6">
       <div>
@@ -145,21 +149,21 @@ export default function DashboardPage() {
               value={stats?.high_news2_count ?? 0}
               sub="Post-op patients needing urgent review"
               icon={Activity}
-              accent="bg-rose-900/40"
+              accent="bg-destructive/10"
             />
             <KpiCard
               label="Borderline Anatomy"
               value={stats?.borderline_anatomy_count ?? 0}
               sub="IFU-challenging morphology"
               icon={AlertTriangle}
-              accent="bg-amber-900/40"
+              accent="bg-warning/10"
             />
             <KpiCard
               label="Upcoming (7 days)"
               value={stats?.upcoming_procedures ?? 0}
               sub="Scheduled interventions"
               icon={Calendar}
-              accent="bg-emerald-900/40"
+              accent="bg-success/10"
             />
           </>
         )}
@@ -175,14 +179,14 @@ export default function DashboardPage() {
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={diameterData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
-                <XAxis dataKey="range" tick={{ fontSize: 10, fill: "#94a3b8" }} />
-                <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                <XAxis dataKey="range" tick={{ fontSize: 10, fill: cc.axis }} />
+                <YAxis tick={{ fontSize: 10, fill: cc.axis }} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: 6 }}
-                  labelStyle={{ color: "#e2e8f0", fontSize: 11 }}
-                  itemStyle={{ color: "#94a3b8", fontSize: 11 }}
+                  contentStyle={tooltipStyle}
+                  labelStyle={{ color: cc.tooltipText, fontSize: 11 }}
+                  itemStyle={{ color: cc.axis, fontSize: 11 }}
                 />
-                <Bar dataKey="count" fill="#6366f1" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="count" fill={cc.chart[0]} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -197,15 +201,15 @@ export default function DashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height={100}>
                 <BarChart data={phaseData} layout="vertical" margin={{ top: 0, right: 0, bottom: 0, left: 10 }}>
-                  <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} hide />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} width={50} />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: cc.axis }} hide />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: cc.axis }} width={50} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: 6 }}
-                    itemStyle={{ color: "#94a3b8", fontSize: 11 }}
+                    contentStyle={tooltipStyle}
+                    itemStyle={{ color: cc.axis, fontSize: 11 }}
                   />
                   <Bar dataKey="value" radius={[0, 3, 3, 0]}>
                     {phaseData.map((entry) => (
-                      <Cell key={entry.key} fill={PHASE_COLORS[entry.key] ?? "#6366f1"} />
+                      <Cell key={entry.key} fill={phaseColor[entry.key] ?? cc.chart[0]} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -230,12 +234,12 @@ export default function DashboardPage() {
                     outerRadius={40}
                   >
                     {interventionData.map((_, i) => (
-                      <Cell key={i} fill={INTERVENTION_COLORS[i % INTERVENTION_COLORS.length]} />
+                      <Cell key={i} fill={interventionColors[i % interventionColors.length]} />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: 6 }}
-                    itemStyle={{ color: "#94a3b8", fontSize: 11 }}
+                    contentStyle={tooltipStyle}
+                    itemStyle={{ color: cc.axis, fontSize: 11 }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -248,7 +252,7 @@ export default function DashboardPage() {
       <div className="rounded-lg border border-border bg-card">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">High-Risk Shortlist (by diameter)</h2>
-          <Link href="/patients" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+          <Link href="/patients" className="text-xs text-primary hover:text-primary transition-colors">
             View all →
           </Link>
         </div>
@@ -277,7 +281,7 @@ export default function DashboardPage() {
                     className="hover:bg-muted/20 transition-colors"
                   >
                     <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
-                      <Link href={`/patients/${p.patient_id}`} className="hover:text-indigo-400 transition-colors">
+                      <Link href={`/patients/${p.patient_id}`} className="hover:text-primary transition-colors">
                         {p.patient_id}
                       </Link>
                     </td>
@@ -320,7 +324,7 @@ export default function DashboardPage() {
                 <Link
                   key={p.patient_id}
                   href={`/patients/${p.patient_id}`}
-                  className="rounded-lg border border-border bg-card p-3 hover:border-indigo-700/50 hover:bg-indigo-900/10 transition-colors block"
+                  className="rounded-lg border border-border bg-card p-3 hover:border-primary/25 hover:bg-primary/10 transition-colors block"
                 >
                   <p className="text-xs text-muted-foreground font-mono mb-1">{p.patient_id}</p>
                   <p className="text-sm font-medium text-foreground truncate">{p.name}</p>

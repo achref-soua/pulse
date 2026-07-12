@@ -28,7 +28,7 @@ function CheckField({ label, ...inputProps }: { label: string } & React.InputHTM
       <input
         type="checkbox"
         {...inputProps}
-        className="h-4 w-4 rounded border-border bg-card accent-indigo-500"
+        className="h-4 w-4 rounded border-border bg-card accent-primary"
       />
       {label}
     </label>
@@ -47,11 +47,11 @@ function NumberField({ label, unit, error, ...inputProps }: {
           type="number"
           step="any"
           {...inputProps}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-700"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         {unit && <span className="text-xs text-muted-foreground shrink-0">{unit}</span>}
       </div>
-      {error && <p className="text-xs text-rose-400">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -107,7 +107,7 @@ function ResultPanel({ result, calcId }: { result: Record<string, unknown>; calc
 
 /* ── IFU-Fit Result ── */
 function IFUResult({ results }: { results: Array<{ device_name: string; overall: string; criteria: Array<{ name: string; status: string; patient_value: string | number; ifu_threshold: string; note: string }>; recommended_size_note: string }> }) {
-  const color = (s: string) => s === "suitable" ? "text-emerald-400" : s === "borderline" ? "text-amber-400" : "text-rose-400";
+  const color = (s: string) => s === "suitable" ? "text-success" : s === "borderline" ? "text-warning" : "text-destructive";
   return (
     <div className="rounded-lg border border-border bg-card divide-y divide-border">
       <div className="px-4 py-3">
@@ -242,7 +242,7 @@ function RCRIForm({ onResult }: { onResult: (r: Record<string, unknown>) => void
         ["insulin_dependent_diabetes", "Insulin-dependent diabetes"],
         ["preop_creatinine_gt_2", "Pre-op creatinine > 2 mg/dL (>177 µmol/L)"],
       ] as const).map(([f, l]) => <CheckField key={f} label={l} {...register(f)} />)}
-      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-indigo-700 hover:bg-indigo-600 text-white py-2 text-sm font-medium transition-colors disabled:opacity-60">
+      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-primary hover:bg-primary/90 text-primary-foreground py-2 text-sm font-medium transition-colors disabled:opacity-60">
         {loading ? "Computing…" : "Calculate RCRI"}
       </button>
     </form>
@@ -270,7 +270,7 @@ function CHA2DS2Form({ onResult }: { onResult: (r: Record<string, unknown>) => v
         ["age_65_to_74", "Age 65–74 (1pt)"],
         ["female_sex", "Female sex (1pt)"],
       ] as const).map(([f, l]) => <CheckField key={f} label={l} {...register(f)} />)}
-      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-indigo-700 hover:bg-indigo-600 text-white py-2 text-sm font-medium transition-colors disabled:opacity-60">
+      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-primary hover:bg-primary/90 text-primary-foreground py-2 text-sm font-medium transition-colors disabled:opacity-60">
         {loading ? "Computing…" : "Calculate CHA₂DS₂-VASc"}
       </button>
     </form>
@@ -299,7 +299,7 @@ function HASBLEDForm({ onResult }: { onResult: (r: Record<string, unknown>) => v
         ["antiplatelet_or_nsaid", "Antiplatelet drug or NSAID"],
         ["alcohol", "Alcohol use (≥ 8 drinks/week)"],
       ] as const).map(([f, l]) => <CheckField key={f} label={l} {...register(f)} />)}
-      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-indigo-700 hover:bg-indigo-600 text-white py-2 text-sm font-medium transition-colors disabled:opacity-60">
+      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-primary hover:bg-primary/90 text-primary-foreground py-2 text-sm font-medium transition-colors disabled:opacity-60">
         {loading ? "Computing…" : "Calculate HAS-BLED"}
       </button>
     </form>
@@ -324,7 +324,7 @@ function NEWS2Form({ onResult }: { onResult: (r: Record<string, unknown>) => voi
       <NumberField label="Heart rate (bpm)" {...register("heart_rate", { valueAsNumber: true })} error={errors.heart_rate?.message} />
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Consciousness (AVPU)</label>
-        <select {...register("consciousness")} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-700">
+        <select {...register("consciousness")} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="A">A — Alert</option>
           <option value="V">V — Voice</option>
           <option value="P">P — Pain</option>
@@ -332,7 +332,7 @@ function NEWS2Form({ onResult }: { onResult: (r: Record<string, unknown>) => voi
         </select>
       </div>
       <NumberField label="Temperature (°C)" {...register("temperature", { valueAsNumber: true })} error={errors.temperature?.message} />
-      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-indigo-700 hover:bg-indigo-600 text-white py-2 text-sm font-medium transition-colors disabled:opacity-60">
+      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-primary hover:bg-primary/90 text-primary-foreground py-2 text-sm font-medium transition-colors disabled:opacity-60">
         {loading ? "Computing…" : "Calculate NEWS2"}
       </button>
     </form>
@@ -355,7 +355,7 @@ function GASForm({ onResult }: { onResult: (r: Record<string, unknown>) => void 
       <CheckField label="Myocardial disease" {...register("myocardial_disease")} />
       <CheckField label="Cerebrovascular disease" {...register("cerebrovascular_disease")} />
       <CheckField label="Renal disease" {...register("renal_disease")} />
-      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-indigo-700 hover:bg-indigo-600 text-white py-2 text-sm font-medium transition-colors disabled:opacity-60">
+      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-primary hover:bg-primary/90 text-primary-foreground py-2 text-sm font-medium transition-colors disabled:opacity-60">
         {loading ? "Computing…" : "Calculate GAS"}
       </button>
     </form>
@@ -377,7 +377,7 @@ function EuroscoreForm({ onResult }: { onResult: (r: Record<string, unknown>) =>
       <CheckField label="Female sex" {...register("female")} />
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Renal dysfunction</label>
-        <select {...register("renal_dysfunction")} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-700">
+        <select {...register("renal_dysfunction")} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="none">None</option>
           <option value="moderate">Moderate (creatinine &gt; 200 µmol/L)</option>
           <option value="dialysis">On dialysis</option>
@@ -401,13 +401,13 @@ function EuroscoreForm({ onResult }: { onResult: (r: Record<string, unknown>) =>
       <NumberField label="Ejection fraction (%)" {...register("ejection_fraction_pct", { valueAsNumber: true })} error={errors.ejection_fraction_pct?.message} />
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Pulmonary hypertension</label>
-        <select {...register("pulmonary_hypertension")} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-700">
+        <select {...register("pulmonary_hypertension")} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="none">None</option>
           <option value="moderate">Moderate (31–55 mmHg)</option>
           <option value="severe">Severe (&gt; 55 mmHg)</option>
         </select>
       </div>
-      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-indigo-700 hover:bg-indigo-600 text-white py-2 text-sm font-medium transition-colors disabled:opacity-60">
+      <button type="submit" disabled={loading} className="mt-2 w-full rounded-md bg-primary hover:bg-primary/90 text-primary-foreground py-2 text-sm font-medium transition-colors disabled:opacity-60">
         {loading ? "Computing…" : "Calculate EuroSCORE II"}
       </button>
     </form>
@@ -476,7 +476,7 @@ function IFUFitForm({ onResult }: { onResult: (r: Record<string, unknown>) => vo
                       e.target.checked ? [...prev, d.id] : prev.filter((x) => x !== d.id)
                     )
                   }
-                  className="h-3.5 w-3.5 rounded border-border accent-indigo-500"
+                  className="h-3.5 w-3.5 rounded border-border accent-primary"
                 />
                 <span>{d.name} <span className="text-muted-foreground">({d.indication})</span></span>
               </label>
@@ -487,7 +487,7 @@ function IFUFitForm({ onResult }: { onResult: (r: Record<string, unknown>) => vo
       <button
         type="submit"
         disabled={loading || selectedDevices.length === 0}
-        className="mt-2 w-full rounded-md bg-indigo-700 hover:bg-indigo-600 text-white py-2 text-sm font-medium transition-colors disabled:opacity-60"
+        className="mt-2 w-full rounded-md bg-primary hover:bg-primary/90 text-primary-foreground py-2 text-sm font-medium transition-colors disabled:opacity-60"
       >
         {loading ? "Computing…" : "Evaluate IFU Fit"}
       </button>
@@ -521,7 +521,7 @@ export default function RiskPage() {
                 onClick={() => { setActiveCalc(c.id); setResult(null); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   activeCalc === c.id
-                    ? "bg-indigo-700 text-white"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 }`}
               >
