@@ -460,6 +460,7 @@ function AISummaryTab({ patientId }: { patientId: string }) {
   });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   if (!data && !isLoading && !error) {
     return (
@@ -510,8 +511,6 @@ function AISummaryTab({ patientId }: { patientId: string }) {
       </div>
     );
   }
-
-  const [pdfLoading, setPdfLoading] = useState(false);
 
   async function downloadPdf() {
     setPdfLoading(true);
