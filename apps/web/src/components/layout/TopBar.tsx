@@ -40,7 +40,7 @@ export function TopBar() {
   const crumbs = getBreadcrumb(pathname);
 
   return (
-    <header className="fixed top-0 left-60 right-0 z-30 flex h-12 items-center border-b border-border bg-card/80 backdrop-blur-sm px-4 gap-4">
+    <header className="fixed top-0 left-60 right-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background/80 px-5 backdrop-blur-md">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1">
         {crumbs.map((c, i) => (
