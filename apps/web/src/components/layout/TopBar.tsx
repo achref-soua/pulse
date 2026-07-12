@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { usePatientContext } from "@/contexts/PatientContext";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const routeLabels: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -61,19 +62,21 @@ export function TopBar() {
 
       {/* Patient-in-context chip */}
       {patientId && patientName && (
-        <div className="flex items-center gap-1.5 rounded-full bg-indigo-900/40 border border-indigo-700/40 px-3 py-1 shrink-0">
-          <span className="text-xs text-indigo-300 font-medium">
+        <div className="flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 shrink-0">
+          <span className="text-xs font-medium text-primary">
             {patientId} — {patientName}
           </span>
           <button
             onClick={clearPatient}
-            className="text-indigo-400 hover:text-indigo-200 transition-colors"
+            className="text-primary/70 transition-colors hover:text-primary"
             title="Clear patient context"
           >
             <X className="h-3 w-3" />
           </button>
         </div>
       )}
+
+      <ThemeToggle className="shrink-0" />
     </header>
   );
 }
