@@ -19,7 +19,7 @@ async def _auth_header(client, email: str, password: str) -> dict:
 @pytest.mark.anyio
 async def test_list_devices_requires_auth(client):
     resp = await client.get("/devices")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 @pytest.mark.anyio

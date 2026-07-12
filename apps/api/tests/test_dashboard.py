@@ -36,7 +36,7 @@ async def test_dashboard_stats_structure(client):
 @pytest.mark.anyio
 async def test_dashboard_stats_requires_auth(client):
     resp = await client.get("/dashboard/stats")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 @pytest.mark.anyio
