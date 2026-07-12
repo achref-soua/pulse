@@ -56,6 +56,12 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </button>
 
       {copilotOpen && <AICopilotPanel onClose={() => setCopilotOpen(false)} />}
+
+      <footer className="fixed bottom-0 left-60 right-0 z-20 border-t border-border/60 bg-background/80 px-4 py-1 text-center backdrop-blur-sm">
+        <p className="text-xs text-muted-foreground">
+          Educational demo on synthetic data — not for clinical use; not medical advice.
+        </p>
+      </footer>
     </div>
   );
 }
