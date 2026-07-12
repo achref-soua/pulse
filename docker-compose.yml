@@ -30,19 +30,22 @@ services:
     build:
       context: ../quiver
       dockerfile: infra/docker/Dockerfile
+    # Quiver 0.35 is configured entirely through QUIVER_* env — the `serve`
+    # subcommand takes no flags. Dev runs insecure (no TLS / at-rest encryption
+    # on the internal network); a real deployment sets QUIVER_API_KEYS +
+    # QUIVER_ENCRYPTION_KEY + TLS certs instead.
     environment:
-      QUIVER_API_KEY: ${QUIVER_API_KEY:-dev-quiver-key-change-me}
+      QUIVER_DATA_DIR: /data
+      QUIVER_REST_ADDR: 0.0.0.0:8080
+      QUIVER_GRPC_ADDR: 0.0.0.0:6334
+      QUIVER_API_KEYS: ${QUIVER_API_KEY:-dev-quiver-key-change-me}
+      QUIVER_INSECURE: "true"
     volumes:
       - quiver_data:/data
     ports:
       - "8080:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
-    command: ["serve", "--data-dir", "/data", "--api-key", "${QUIVER_API_KEY:-dev-quiver-key-change-me}"]
+    # The distroless image ships no shell/wget, so there is no container
+    # healthcheck; the API retries ensure_collections() until Quiver is ready.
 
   api:
     build:
@@ -62,7 +65,7 @@ services:
       redis:
         condition: service_healthy
       quiver:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
       interval: 10s

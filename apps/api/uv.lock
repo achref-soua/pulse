@@ -2065,7 +2065,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.7.0" },
     { name = "python-jose", extras = ["cryptography"], specifier = ">=3.3.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
-    { name = "quiver-client", editable = "../../../quiver/sdks/python" },
+    { name = "quiver-client", specifier = ">=0.35.0" },
     { name = "redis", extras = ["hiredis"], specifier = ">=5.2.0" },
     { name = "reportlab", specifier = ">=4.2.5" },
     { name = "sentence-transformers", specifier = ">=3.3.1" },
@@ -2409,32 +2409,14 @@ wheels = [
 
 [[package]]
 name = "quiver-client"
-version = "0.18.1"
-source = { editable = "../../../quiver/sdks/python" }
+version = "0.35.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "cryptography", marker = "extra == 'dcpe'", specifier = ">=42" },
-    { name = "haystack-ai", marker = "extra == 'haystack'", specifier = ">=2.0" },
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "langchain-core", marker = "extra == 'langchain'", specifier = ">=1.0" },
-    { name = "llama-index-core", marker = "extra == 'llamaindex'", specifier = ">=0.11" },
-    { name = "pynacl", marker = "extra == 'encryption'", specifier = ">=1.5" },
-]
-provides-extras = ["encryption", "dcpe", "langchain", "llamaindex", "haystack"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "cryptography", specifier = ">=42" },
-    { name = "haystack-ai", specifier = ">=2.0" },
-    { name = "langchain-core", specifier = ">=1.0" },
-    { name = "llama-index-core", specifier = ">=0.11" },
-    { name = "pynacl", specifier = ">=1.5" },
-    { name = "pytest", specifier = ">=8" },
-    { name = "respx", specifier = ">=0.21" },
+sdist = { url = "https://files.pythonhosted.org/packages/be/67/33241e42051f1866c64e31343f076bd211f0b0f7158a49e2aefde13617c6/quiver_client-0.35.0.tar.gz", hash = "sha256:ea57c1a4f896a540e0b20c7056a66d7e23fca5a64e36e753fad2e551b26687c5", size = 307312, upload-time = "2026-07-12T00:05:00.843Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/6c/6cca9b26914d77d053a0292e06e3ec0a3c240aebbfcccc394ce29fc0cec6/quiver_client-0.35.0-py3-none-any.whl", hash = "sha256:e168c2c48abbb63f8038ec5ee9a35618a83688724069bc5bd185a89077d23c03", size = 35180, upload-time = "2026-07-12T00:04:59.82Z" },
 ]
 
 [[package]]
