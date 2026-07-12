@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useChartColors } from "@/lib/chartTheme";
 import { api } from "@/lib/api";
 import { RiskBadge, news2ToRiskLevel } from "@/components/ui/RiskBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -41,6 +42,7 @@ function PatientVitalsCard({ detail }: { detail: PatientDetail }) {
   const latest = sorted.at(-1);
   const score = latest ? news2Score(latest) : 0;
   const level = news2ToRiskLevel(score);
+  const cc = useChartColors();
 
   const chartData = sorted.slice(-10).map((v) => ({
     time: new Date(v.taken_at).toLocaleDateString(),
@@ -65,13 +67,13 @@ function PatientVitalsCard({ detail }: { detail: PatientDetail }) {
         <div className="px-4 py-3">
           <ResponsiveContainer width="100%" height={80}>
             <LineChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: -30 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="time" tick={{ fontSize: 8, fill: "#64748b" }} />
-              <YAxis tick={{ fontSize: 8, fill: "#64748b" }} />
-              <Tooltip contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", fontSize: 10 }} />
-              <Line type="monotone" dataKey="spo2" stroke="#6366f1" dot={false} strokeWidth={1.5} name="SpO₂" />
-              <Line type="monotone" dataKey="sbp" stroke="#f59e0b" dot={false} strokeWidth={1.5} name="SBP" />
-              <Line type="monotone" dataKey="hr" stroke="#10b981" dot={false} strokeWidth={1.5} name="HR" />
+              <CartesianGrid strokeDasharray="3 3" stroke={cc.grid} />
+              <XAxis dataKey="time" tick={{ fontSize: 8, fill: cc.axis }} />
+              <YAxis tick={{ fontSize: 8, fill: cc.axis }} />
+              <Tooltip contentStyle={{ backgroundColor: cc.tooltipBg, border: `1px solid ${cc.tooltipBorder}`, borderRadius: 8, fontSize: 10, color: cc.tooltipText }} />
+              <Line type="monotone" dataKey="spo2" stroke={cc.chart[0]} dot={false} strokeWidth={1.5} name="SpO₂" />
+              <Line type="monotone" dataKey="sbp" stroke={cc.chart[2]} dot={false} strokeWidth={1.5} name="SBP" />
+              <Line type="monotone" dataKey="hr" stroke={cc.chart[1]} dot={false} strokeWidth={1.5} name="HR" />
             </LineChart>
           </ResponsiveContainer>
         </div>

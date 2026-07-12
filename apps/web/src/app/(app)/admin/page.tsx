@@ -71,7 +71,7 @@ export default function AdminPage() {
               onClick={() => setTab(t)}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize ${
                 tab === t
-                  ? "border-indigo-500 text-foreground"
+                  ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -106,7 +106,7 @@ export default function AdminPage() {
                       <select
                         value={u.role}
                         onChange={(e) => roleMutation.mutate({ id: u.id, role: e.target.value })}
-                        className="text-xs rounded border border-border bg-card px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-700 text-foreground"
+                        className="text-xs rounded border border-border bg-card px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
                       >
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
@@ -119,7 +119,7 @@ export default function AdminPage() {
                         disabled={u.id === user.id}
                         className={`text-xs px-2 py-1 rounded-full border transition-colors disabled:opacity-40 ${
                           u.is_active
-                            ? "bg-emerald-900/30 text-emerald-300 border-emerald-700/40 hover:bg-emerald-900/50"
+                            ? "bg-success/10 text-success border-success/25 hover:bg-success/20"
                             : "bg-muted/30 text-muted-foreground border-border hover:bg-muted/50"
                         }`}
                       >
