@@ -9,3 +9,4 @@ class PulseState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     patient_context: str  # pre-formatted patient summary injected into system prompt
     sources: list[dict]   # retrieved docs forwarded to the client
+    route: str            # "agent" | "direct" — set by the router node
