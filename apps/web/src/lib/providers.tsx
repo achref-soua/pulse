@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { ThemeProvider, useTheme } from "next-themes";
+import { TooltipProvider } from "@pulse/ui";
 import { Toaster } from "sonner";
 
 function ThemedToaster() {
@@ -32,8 +33,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <ThemedToaster />
+        <TooltipProvider delayDuration={200}>
+          {children}
+          <ThemedToaster />
+        </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
