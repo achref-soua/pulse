@@ -126,6 +126,49 @@ async def test_chat_streams_agent_events_and_persists(ai_client, surgeon_user, d
     assert {m.role for m in saved} == {"user", "assistant"}
 
 
+# ── /ai/nl-cohort ──────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_nl_cohort_applies_extracted_filters(ai_client, surgeon_user, db):
+    from app.models.patient import AneurysmType, Patient, Phase, PlannedIntervention
+
+    db.add_all([
+        Patient(patient_id="NL1", name="a", age=80, sex="M", mrn="M-NL1",
+                aneurysm_type=AneurysmType.infrarenal_aaa, max_diameter_mm=60.0,
+                phase=Phase.post, planned_intervention=PlannedIntervention.evar),
+        Patient(patient_id="NL2", name="b", age=55, sex="F", mrn="M-NL2",
+                aneurysm_type=AneurysmType.infrarenal_aaa, max_diameter_mm=48.0,
+                phase=Phase.pre, planned_intervention=PlannedIntervention.evar),
+    ])
+    await db.flush()
+    token = await _token(ai_client, surgeon_user)
+
+    reply = MagicMock()
+    reply.content = '{"phase": "post", "min_diameter_mm": 55}'
+    with (
+        patch("app.api.routers.ai.get_settings") as mock_settings,
+        patch("app.api.routers.ai.ChatGroq") as mock_groq,
+    ):
+        s = MagicMock()
+        s.groq_api_key = "gsk_test"
+        s.groq_router_model = "llama-3.1-8b-instant"
+        mock_settings.return_value = s
+        mock_groq.return_value.ainvoke = AsyncMock(return_value=reply)
+
+        resp = await ai_client.post(
+            "/ai/nl-cohort",
+            json={"query": "post-op patients with large aneurysms"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["filters"]["phase"] == "post"
+    assert data["total"] == 1
+    assert data["patient_ids"] == ["NL1"]
+
+
 # ── /ai/patient-summary ────────────────────────────────────────────────────
 
 
