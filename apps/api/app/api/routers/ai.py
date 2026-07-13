@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import dataclasses
 import json
 import uuid
 from collections.abc import AsyncGenerator
@@ -19,8 +18,8 @@ from app.ai import tools as agent_tools
 from app.ai.graph import run_agent_events, run_summary
 from app.ai.report import build_pdf
 from app.ai.retriever import all_knowledge
+from app.ai.scoring import compute_applicable_scores, scores_as_text
 from app.api.deps import get_current_user
-from app.clinical.news2 import NEWS2Inputs, compute_news2
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.conversation import Conversation, Message
@@ -211,7 +210,10 @@ async def patient_summary(
         f"{p.age}y, diameter {p.max_diameter_mm or '?'} mm, phase {p.phase.value}"
     )
 
-    summary_text, docs = await run_summary(patient_data=ctx, query=query)
+    scores = compute_applicable_scores(p)
+    summary_text, docs = await run_summary(
+        patient_data=ctx, query=query, scores_text=scores_as_text(scores)
+    )
 
     return PatientSummaryResponse(
         patient_id=patient_id,
@@ -249,22 +251,11 @@ async def download_report(
         f"management, phase {p.phase.value}"
     )
 
-    summary_text, docs = await run_summary(patient_data=ctx, query=query)
-
-    # Compute available risk scores from patient labs/vitals inline
-    risk_scores: dict = {}
-    if p.vitals:
-        latest = sorted(p.vitals, key=lambda v: v.taken_at, reverse=True)[0]
-        news2_result = compute_news2(NEWS2Inputs(
-            respiration_rate=latest.rr or 16,
-            spo2=latest.spo2 or 98.0,
-            on_supplemental_oxygen=latest.on_oxygen or False,
-            systolic_bp=latest.systolic_bp or 120,
-            heart_rate=latest.heart_rate or 70,
-            consciousness=str(latest.consciousness or "A"),
-            temperature=latest.temp_c or 36.5,
-        ))
-        risk_scores["NEWS2"] = dataclasses.asdict(news2_result)
+    # Compute every applicable score deterministically, then narrate grounded in them.
+    risk_scores = compute_applicable_scores(p)
+    summary_text, docs = await run_summary(
+        patient_data=ctx, query=query, scores_text=scores_as_text(risk_scores)
+    )
 
     patient_dict = {
         "patient_id": p.patient_id,

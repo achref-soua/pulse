@@ -73,13 +73,16 @@ def build_agent_system(patient_context: str) -> str:
 
 SUMMARY_PROMPT = """\
 You are Pulse. Produce a concise clinical summary for the patient data below.
-Structure: (1) Diagnosis & anatomy, (2) Key risk scores (report only the values given — \
-do not invent them), (3) Suitability for intervention, (4) Active concerns, \
-(5) Recommended next steps.
-Limit to ~300 words. Include the disclaimer.
+Structure: (1) Diagnosis & anatomy, (2) Key risk scores (report ONLY the computed values \
+below — never invent or recompute a score), (3) Suitability for intervention, \
+(4) Active concerns, (5) Recommended next steps.
+Limit to ~300 words. Cite guideline sources by number. Include the disclaimer.
 
 PATIENT DATA:
 {patient_data}
+
+COMPUTED RISK SCORES (authoritative — quote these exactly):
+{scores_section}
 
 RELEVANT GUIDELINES:
 {sources_section}"""

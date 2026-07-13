@@ -167,8 +167,11 @@ def _as_sources(payload) -> list:
 
 
 # ── legacy non-streaming summary (used by report + patient-summary) ────────
-async def run_summary(patient_data: str, query: str) -> tuple[str, list[dict]]:
-    """Non-streaming: retrieve relevant guidelines then generate a patient summary."""
+async def run_summary(
+    patient_data: str, query: str, scores_text: str = ""
+) -> tuple[str, list[dict]]:
+    """Non-streaming: retrieve guidelines then narrate a summary grounded in the
+    pre-computed scores (which the model must quote, not recompute)."""
     settings = get_settings()
     docs = await retrieve(query, top_k=5)
     llm = ChatGroq(
@@ -176,6 +179,10 @@ async def run_summary(patient_data: str, query: str) -> tuple[str, list[dict]]:
         temperature=settings.groq_temperature,
         api_key=settings.groq_api_key,
     )
-    prompt = SUMMARY_PROMPT.format(patient_data=patient_data, sources_section=format_sources(docs))
+    prompt = SUMMARY_PROMPT.format(
+        patient_data=patient_data,
+        scores_section=scores_text or "No scores available.",
+        sources_section=format_sources(docs),
+    )
     response = await llm.ainvoke([SystemMessage(content=prompt)])
     return response.content, docs
