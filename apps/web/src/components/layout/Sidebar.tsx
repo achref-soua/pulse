@@ -38,6 +38,7 @@ const navGroups = [
       { href: "/risk", label: "Risk Tools", icon: ShieldCheck },
       { href: "/devices", label: "Devices", icon: Cpu },
       { href: "/monitoring", label: "Monitoring", icon: Activity },
+      { href: "/analytics", label: "Analytics", icon: BarChart2 },
       { href: "/knowledge", label: "Knowledge Base", icon: BookOpen },
     ],
   },
