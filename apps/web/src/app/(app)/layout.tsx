@@ -7,6 +7,7 @@ import { cn } from "@pulse/ui";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { AICopilotPanel } from "@/components/ai/AICopilotPanel";
+import { CommandPalette } from "@/components/command/CommandPalette";
 import { PatientContextProvider } from "@/contexts/PatientContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
@@ -56,6 +57,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </button>
 
       {copilotOpen && <AICopilotPanel onClose={() => setCopilotOpen(false)} />}
+
+      <CommandPalette />
 
       <footer className="fixed bottom-0 left-60 right-0 z-20 border-t border-border/60 bg-background/80 px-4 py-1 text-center backdrop-blur-sm">
         <p className="text-xs text-muted-foreground">
