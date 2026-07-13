@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.ai.retriever import embed, retrieve
+from app.ai.scoring import compute_applicable_scores
 from app.clinical.cha2ds2_vasc import CHA2DS2VascInputs, compute_cha2ds2_vasc
 from app.clinical.euroscore2 import EuroSCORE2Inputs, compute_euroscore2
 from app.clinical.gas import GASInputs, compute_gas
@@ -142,6 +143,21 @@ def _patient_dict(p: Patient) -> dict:
 
 
 # ── 2. structured patient record ──────────────────────────────────────────
+@tool
+async def score_patient(patient_id: str) -> dict:
+    """Compute EVERY applicable clinical score for a real patient, with inputs derived
+    server-side from the record (NOT from you). Prefer this over calculate_risk_score
+    for any question about a specific patient — it guarantees the inputs match the chart.
+    Returns {score_name: result} for each score the record supports (e.g. NEWS2, RCRI, GAS)."""
+    p = await _load_patient(patient_id)
+    if p is None:
+        return {"error": f"patient '{patient_id}' not found"}
+    scores = compute_applicable_scores(p)
+    if not scores:
+        return {"patient_id": patient_id, "scores": {}, "note": "record lacks inputs for any score"}
+    return {"patient_id": patient_id, "scores": scores}
+
+
 @tool
 async def get_patient(patient_id: str) -> dict:
     """Fetch a patient's structured clinical record: demographics, aortic anatomy,
@@ -343,6 +359,7 @@ async def search_patient_notes(query: str, patient_id: str | None = None) -> lis
 
 TOOLS = [
     calculate_risk_score,
+    score_patient,
     get_patient,
     match_devices,
     search_guidelines,

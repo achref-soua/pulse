@@ -69,6 +69,19 @@ async def test_get_patient_and_query_cohort(db):
 
 
 @pytest.mark.asyncio
+async def test_score_patient_derives_inputs_from_record(db):
+    tools.bind_db(db)
+    await _seed_patient(db)  # has vitals → NEWS2 derivable; no comorbidities → no RCRI/GAS
+
+    out = await tools.score_patient.ainvoke({"patient_id": "P-9001"})
+    assert out["patient_id"] == "P-9001"
+    assert "NEWS2" in out["scores"]  # derived server-side, not model-supplied
+    assert "error" not in out
+
+    assert "error" in await tools.score_patient.ainvoke({"patient_id": "P-0000"})
+
+
+@pytest.mark.asyncio
 async def test_match_devices_ranks_catalog(db):
     tools.bind_db(db)
     await _seed_patient(db)
