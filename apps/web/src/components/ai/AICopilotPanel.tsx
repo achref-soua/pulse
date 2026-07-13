@@ -1,209 +1,87 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send, X, Loader2, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { Bot, Loader2, Maximize2, RotateCcw, Send, X } from "lucide-react";
+import { cn } from "@pulse/ui";
 import { usePatientContext } from "@/contexts/PatientContext";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-  sources?: Source[];
-}
-
-interface Source {
-  id: string;
-  type: string;
-  title: string;
-  score?: number | null;
-}
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("pulse_access_token");
-}
+import { useCopilotChat } from "./useCopilotChat";
+import { MessageBubble } from "./AgentTrace";
+import { SuggestedPrompts } from "./SuggestedPrompts";
 
 export function AICopilotPanel({ onClose }: { onClose: () => void }) {
   const { patientId, patientName } = usePatientContext();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "Hello — I'm the Pulse AI Copilot. I can answer questions about aortic and endovascular surgery guidelines, help interpret anatomy, and summarise patient context.\n\n⚠️ Educational demo on synthetic data — not for clinical use; not medical advice.",
-    },
-  ]);
+  const { messages, streaming, send, reset } = useCopilotChat(patientId);
   const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function send() {
+  function submit() {
     const text = input.trim();
     if (!text || streaming) return;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
-    setStreaming(true);
-
-    const token = getToken();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    // Placeholder for the assistant reply being built
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: "", sources: [] },
-    ]);
-
-    try {
-      const res = await fetch(`${API_URL}/ai/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ message: text, patient_id: patientId ?? undefined }),
-        signal: ctrl.signal,
-      });
-
-      if (!res.ok || !res.body) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split("\n");
-        buf = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const evt = JSON.parse(line.slice(6));
-            if (evt.type === "sources") {
-              setMessages((prev) => {
-                const copy = [...prev];
-                copy[copy.length - 1] = {
-                  ...copy[copy.length - 1],
-                  sources: evt.content,
-                };
-                return copy;
-              });
-            } else if (evt.type === "token") {
-              setMessages((prev) => {
-                const copy = [...prev];
-                copy[copy.length - 1] = {
-                  ...copy[copy.length - 1],
-                  content: (copy[copy.length - 1].content ?? "") + evt.content,
-                };
-                return copy;
-              });
-            }
-          } catch {
-            // malformed SSE line — skip
-          }
-        }
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        setMessages((prev) => {
-          const copy = [...prev];
-          copy[copy.length - 1] = {
-            ...copy[copy.length - 1],
-            content: "Sorry, the AI service is unavailable. Check that GROQ_API_KEY is set and the stack is running.",
-          };
-          return copy;
-        });
-      }
-    } finally {
-      setStreaming(false);
-    }
+    void send(text);
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 w-[420px] max-h-[600px] flex flex-col rounded-xl border border-border bg-card shadow-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+    <div className="fixed bottom-20 right-4 z-50 flex max-h-[640px] w-[420px] flex-col rounded-xl border border-border bg-card shadow-2xl">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground">AI Copilot</span>
-          {patientName && (
-            <span className="text-xs text-muted-foreground">· {patientName}</span>
-          )}
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
+            <Bot className="h-4 w-4 text-primary" />
+          </span>
+          <span className="text-sm font-semibold text-foreground">Clinical Agent</span>
+          {patientName && <span className="text-xs text-muted-foreground">· {patientName}</span>}
         </div>
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <button onClick={reset} title="New conversation" className="rounded p-1 hover:text-foreground">
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
+          <Link href="/copilot" title="Open full copilot" className="rounded p-1 hover:text-foreground">
+            <Maximize2 className="h-3.5 w-3.5" />
+          </Link>
+          <button onClick={onClose} title="Close" className="rounded p-1 hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[88%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/50 text-foreground"
-              }`}
-            >
-              {m.content || (streaming && i === messages.length - 1 ? (
-                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-              ) : "")}
-              {m.sources && m.sources.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-border/50 space-y-0.5">
-                  {m.sources.slice(0, 3).map((s) => (
-                    <div key={s.id} className="flex items-start gap-1">
-                      <BookOpen className="mt-0.5 h-2.5 w-2.5 shrink-0 text-primary" />
-                      <span className="text-xs text-muted-foreground leading-snug">{s.title}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <MessageBubble key={i} message={m} streaming={streaming && i === messages.length - 1} />
         ))}
+        {messages.length === 1 && !streaming && (
+          <SuggestedPrompts hasPatient={!!patientId} onPick={(p) => void send(p)} />
+        )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-border px-3 py-2 flex items-end gap-2">
+      <div className="flex items-end gap-2 border-t border-border px-3 py-2">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              send();
+              submit();
             }
           }}
-          placeholder="Ask about guidelines, anatomy, risk…"
+          placeholder="Ask to score, match a device, or search guidelines…"
           rows={2}
           disabled={streaming}
           className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         />
         <button
-          onClick={send}
+          onClick={submit}
           disabled={!input.trim() || streaming}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
-        >
-          {streaming ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40",
           )}
+        >
+          {streaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
       </div>
     </div>

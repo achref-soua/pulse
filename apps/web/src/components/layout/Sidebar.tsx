@@ -6,6 +6,7 @@ import {
   Activity,
   BarChart2,
   BookOpen,
+  Bot,
   Cpu,
   LayoutDashboard,
   LogOut,
@@ -33,6 +34,7 @@ const navGroups = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/patients", label: "Patients", icon: Users },
+      { href: "/copilot", label: "Copilot", icon: Bot },
       { href: "/risk", label: "Risk Tools", icon: ShieldCheck },
       { href: "/devices", label: "Devices", icon: Cpu },
       { href: "/monitoring", label: "Monitoring", icon: Activity },
