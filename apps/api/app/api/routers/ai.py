@@ -2,31 +2,41 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
+import uuid
 from collections.abc import AsyncGenerator
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response, StreamingResponse
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_groq import ChatGroq
+from langchain_core.messages import AIMessage, HumanMessage
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.ai.graph import run_summary
-from app.ai.prompts import build_system_prompt
+from app.ai import tools as agent_tools
+from app.ai.graph import run_agent_events, run_summary
 from app.ai.report import build_pdf
-from app.ai.retriever import all_knowledge, retrieve
+from app.ai.retriever import all_knowledge
 from app.api.deps import get_current_user
+from app.clinical.news2 import NEWS2Inputs, compute_news2
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.models.conversation import Conversation, Message
 from app.models.patient import Patient
 from app.models.user import User
 from app.schemas.ai import ChatRequest, KBItem, PatientSummaryResponse
 
 log = structlog.get_logger()
 router = APIRouter(prefix="/ai", tags=["ai"])
+
+_COMORBIDITY_LABELS = {
+    "htn": "Hypertension", "dm": "Diabetes", "insulin_dependent": "Insulin-dependent DM",
+    "ckd": "CKD", "copd": "COPD", "cad": "CAD", "prior_mi": "Prior MI",
+    "afib": "AF", "cvd_stroke": "Stroke/CVD", "chf": "CHF",
+    "smoking_current": "Current smoker", "smoking_former": "Ex-smoker",
+}
 
 
 def _require_groq(settings=None):
@@ -40,12 +50,6 @@ def _require_groq(settings=None):
 
 def _patient_context_str(p: Patient) -> str:
     """Serialize key patient fields into a text block for the system prompt."""
-    _COMORBIDITY_LABELS = {
-        "htn": "Hypertension", "dm": "Diabetes", "insulin_dependent": "Insulin-dependent DM",
-        "ckd": "CKD", "copd": "COPD", "cad": "CAD", "prior_mi": "Prior MI",
-        "afib": "AF", "cvd_stroke": "Stroke/CVD", "chf": "CHF",
-        "smoking_current": "Current smoker", "smoking_former": "Ex-smoker",
-    }
     comorbidities = ", ".join(
         label
         for c in (p.comorbidities or [])
@@ -104,13 +108,41 @@ async def list_knowledge(_: User = Depends(get_current_user)):
 
 # ── POST /ai/chat (SSE streaming) ─────────────────────────────────────────
 
+def _sse(event: dict) -> str:
+    return f"data: {json.dumps(event)}\n\n"
+
+
+async def _load_thread(thread_id: str | None, user_id: uuid.UUID, db: AsyncSession):
+    """Return (conversation, prior LangChain messages) for a thread the user owns."""
+    if not thread_id:
+        return None, []
+    try:
+        cid = uuid.UUID(thread_id)
+    except ValueError:
+        return None, []
+    conv = (
+        await db.execute(
+            select(Conversation)
+            .where(Conversation.id == cid, Conversation.user_id == user_id)
+            .options(selectinload(Conversation.messages))
+        )
+    ).scalar_one_or_none()
+    if conv is None:
+        return None, []
+    history = [
+        HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
+        for m in conv.messages
+    ]
+    return conv, history
+
+
 @router.post("/chat")
 async def chat_stream(
     req: ChatRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Stream a chat response via Server-Sent Events."""
+    """Stream the agent's reasoning over SSE: router → tool_call/tool_result → sources → token."""
     settings = get_settings()
     _require_groq(settings)
 
@@ -122,30 +154,36 @@ async def chat_stream(
         except HTTPException:
             pass
 
+    conv, history = await _load_thread(req.thread_id, current_user.id, db)
+    if conv is None:
+        conv = Conversation(user_id=current_user.id, title=req.message[:200])
+        db.add(conv)
+        await db.flush()
+    thread_id = str(conv.id)
+    messages = [*history, HumanMessage(content=req.message)]
+    agent_tools.bind_db(db)  # request-scoped session for the tools
+
     async def event_stream() -> AsyncGenerator[str, None]:
+        answer = ""
         try:
-            docs = await retrieve(req.message, top_k=5)
-            # Send sources first so the client can render citations immediately
-            yield f"data: {json.dumps({'type': 'sources', 'content': docs})}\n\n"
-
-            llm = ChatGroq(
-                model=settings.groq_model,
-                temperature=settings.groq_temperature,
-                api_key=settings.groq_api_key,
-                streaming=True,
-            )
-            system = build_system_prompt(patient_context, docs)
-            messages = [SystemMessage(content=system), HumanMessage(content=req.message)]
-
-            async for chunk in llm.astream(messages):
-                if chunk.content:
-                    yield f"data: {json.dumps({'type': 'token', 'content': chunk.content})}\n\n"
-
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
-
+            yield _sse({"type": "thread", "content": thread_id})
+            async for ev in run_agent_events(messages, patient_context):
+                if ev["type"] == "done":
+                    answer = ev.get("content", "")
+                yield _sse(ev)
         except Exception as exc:
             log.error("ai.chat error", error=str(exc))
-            yield f"data: {json.dumps({'type': 'error', 'content': 'AI service error — please retry.'})}\n\n"
+            yield _sse({"type": "error", "content": "AI service error — please retry."})
+            return
+
+        # Persist the turn for multi-turn memory (best-effort — never breaks the stream).
+        try:
+            db.add(Message(conversation_id=conv.id, role="user", content=req.message))
+            if answer:
+                db.add(Message(conversation_id=conv.id, role="assistant", content=answer))
+            await db.commit()
+        except Exception as exc:
+            log.warning("ai.chat persist failed", error=str(exc))
 
     return StreamingResponse(
         event_stream(),
@@ -216,8 +254,6 @@ async def download_report(
     # Compute available risk scores from patient labs/vitals inline
     risk_scores: dict = {}
     if p.vitals:
-        import dataclasses
-        from app.clinical.news2 import NEWS2Inputs, compute_news2
         latest = sorted(p.vitals, key=lambda v: v.taken_at, reverse=True)[0]
         news2_result = compute_news2(NEWS2Inputs(
             respiration_rate=latest.rr or 16,

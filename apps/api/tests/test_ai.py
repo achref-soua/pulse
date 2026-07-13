@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.quiver_client import get_quiver_client
@@ -86,43 +87,43 @@ async def test_chat_requires_groq_key(ai_client, surgeon_user):
 
 
 @pytest.mark.asyncio
-async def test_chat_streams_sse(ai_client, surgeon_user):
-    """With a mocked Groq key and retriever, the SSE stream yields tokens + done."""
+async def test_chat_streams_agent_events_and_persists(ai_client, surgeon_user, db):
+    """The SSE stream forwards the agent's events and persists the turn for memory."""
     token = await _token(ai_client, surgeon_user)
 
-    fake_chunk = MagicMock()
-    fake_chunk.content = "EVAR is endovascular aneurysm repair."
+    async def fake_events(_messages, _ctx=""):
+        yield {"type": "router", "content": "agent"}
+        yield {"type": "tool_call", "name": "calculate_risk_score", "args": {}}
+        yield {"type": "tool_result", "name": "calculate_risk_score", "content": "{}"}
+        yield {"type": "token", "content": "RCRI is 2."}
+        yield {"type": "done", "content": "RCRI is 2."}
 
-    async def mock_astream(*_args, **_kwargs):
-        yield fake_chunk
-
+    # commit → flush so the persisted rows stay inside the fixture's rollback scope
     with (
         patch("app.api.routers.ai.get_settings") as mock_settings,
-        patch("app.ai.retriever.retrieve", new=AsyncMock(return_value=[])),
-        patch("app.api.routers.ai.ChatGroq") as mock_groq,  # noqa: N806
+        patch("app.api.routers.ai.run_agent_events", new=fake_events),
+        patch.object(db, "commit", new=db.flush),
     ):
         s = MagicMock()
         s.groq_api_key = "gsk_test"
-        s.groq_model = "llama-3.3-70b-versatile"
-        s.groq_temperature = 0.3
         mock_settings.return_value = s
-
-        instance = MagicMock()
-        instance.astream = mock_astream
-        mock_groq.return_value = instance
 
         resp = await ai_client.post(
             "/ai/chat",
-            json={"message": "What is EVAR?"},
+            json={"message": "What is the RCRI?"},
             headers={"Authorization": f"Bearer {token}"},
         )
 
     assert resp.status_code == 200
     assert "text/event-stream" in resp.headers["content-type"]
     body = resp.text
-    assert "sources" in body
-    assert "token" in body
-    assert "done" in body
+    for expected in ("thread", "router", "tool_call", "tool_result", "token", "done"):
+        assert expected in body
+
+    # the turn was persisted (user + assistant messages under a new conversation)
+    from app.models.conversation import Message
+    saved = (await db.execute(select(Message))).scalars().all()
+    assert {m.role for m in saved} == {"user", "assistant"}
 
 
 # ── /ai/patient-summary ────────────────────────────────────────────────────
