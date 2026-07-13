@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import get_current_user, require_role
 from app.core.database import get_db
 from app.models.audit_log import AuditLog
-from app.models.patient import Patient, Phase, PlannedIntervention
+from app.models.patient import AneurysmType, Patient, Phase, PlannedIntervention
 from app.models.user import User, UserRole
 from app.schemas.patient import PatientListItem, PatientResponse
 
@@ -20,6 +20,11 @@ async def list_patients(
     request: Request,
     phase: Phase | None = Query(None),
     intervention: PlannedIntervention | None = Query(None),
+    aneurysm_type: AneurysmType | None = Query(None),
+    sex: str | None = Query(None, pattern="^[MF]$"),
+    min_diameter_mm: float | None = Query(None, ge=0),
+    min_age: int | None = Query(None, ge=0),
+    max_age: int | None = Query(None, ge=0),
     search: str | None = Query(None, max_length=100),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -31,6 +36,16 @@ async def list_patients(
         q = q.where(Patient.phase == phase)
     if intervention:
         q = q.where(Patient.planned_intervention == intervention)
+    if aneurysm_type:
+        q = q.where(Patient.aneurysm_type == aneurysm_type)
+    if sex:
+        q = q.where(Patient.sex == sex)
+    if min_diameter_mm is not None:
+        q = q.where(Patient.max_diameter_mm >= min_diameter_mm)
+    if min_age is not None:
+        q = q.where(Patient.age >= min_age)
+    if max_age is not None:
+        q = q.where(Patient.age <= max_age)
     if search:
         q = q.where(Patient.name.ilike(f"%{search}%") | Patient.patient_id.ilike(f"%{search}%"))
     q = q.order_by(Patient.patient_id).limit(limit).offset(offset)

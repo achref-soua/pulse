@@ -10,6 +10,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response, StreamingResponse
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_groq import ChatGroq
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -25,7 +26,14 @@ from app.core.database import get_db
 from app.models.conversation import Conversation, Message
 from app.models.patient import Patient
 from app.models.user import User
-from app.schemas.ai import ChatRequest, KBItem, PatientSummaryResponse
+from app.schemas.ai import (
+    ChatRequest,
+    CohortFilters,
+    KBItem,
+    NLCohortRequest,
+    NLCohortResponse,
+    PatientSummaryResponse,
+)
 
 log = structlog.get_logger()
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -189,6 +197,71 @@ async def chat_stream(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ── POST /ai/nl-cohort ─────────────────────────────────────────────────────
+
+_NL_COHORT_PROMPT = """Extract structured patient-roster filters from the query below. \
+Return ONLY a JSON object with any of these keys that apply (omit the rest):
+- phase: one of "pre", "intra", "post"
+- planned_intervention: one of "EVAR", "TEVAR", "open_graft", "surveillance"
+- aneurysm_type: one of "infrarenal_AAA", "juxtarenal_AAA", "TAA", "ascending"
+- sex: "M" or "F"
+- min_diameter_mm: number (for "large"/"big" aneurysms use 55)
+- min_age, max_age: integers ("elderly" → min_age 75)
+Return {{}} if nothing maps. No prose.
+
+Query: {query}"""
+
+
+@router.post("/nl-cohort", response_model=NLCohortResponse)
+async def nl_cohort(
+    req: NLCohortRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Turn a natural-language cohort description into structured filters + matching patients."""
+    settings = get_settings()
+    _require_groq(settings)
+
+    llm = ChatGroq(
+        model=settings.groq_router_model,  # extraction is simple — the fast 8B is enough
+        temperature=0,
+        api_key=settings.groq_api_key,
+        model_kwargs={"response_format": {"type": "json_object"}},
+    )
+    try:
+        reply = await llm.ainvoke([HumanMessage(content=_NL_COHORT_PROMPT.format(query=req.query))])
+        raw = json.loads(reply.content)
+    except Exception as exc:  # extraction is best-effort — degrade to empty filters
+        log.warning("nl_cohort extraction failed", error=str(exc))
+        raw = {}
+
+    # Validate/coerce through the schema so a hallucinated key can't reach the query.
+    filters = CohortFilters(**{k: v for k, v in raw.items() if k in CohortFilters.model_fields})
+
+    conds = []
+    if filters.phase:
+        conds.append(Patient.phase == filters.phase)
+    if filters.planned_intervention:
+        conds.append(Patient.planned_intervention == filters.planned_intervention)
+    if filters.aneurysm_type:
+        conds.append(Patient.aneurysm_type == filters.aneurysm_type)
+    if filters.sex:
+        conds.append(Patient.sex == filters.sex)
+    if filters.min_diameter_mm is not None:
+        conds.append(Patient.max_diameter_mm >= filters.min_diameter_mm)
+    if filters.min_age is not None:
+        conds.append(Patient.age >= filters.min_age)
+    if filters.max_age is not None:
+        conds.append(Patient.age <= filters.max_age)
+
+    rows = (
+        await db.execute(
+            select(Patient.patient_id).where(*conds).order_by(Patient.patient_id).limit(500)
+        )
+    ).scalars().all()
+    return NLCohortResponse(query=req.query, filters=filters, total=len(rows), patient_ids=list(rows))
 
 
 # ── POST /ai/patient-summary/{patient_id} ─────────────────────────────────
