@@ -256,6 +256,11 @@ async def nl_cohort(
     if filters.max_age is not None:
         conds.append(Patient.age <= filters.max_age)
 
+    # Fail closed: if nothing mapped (extraction error or an unmappable query), return an
+    # empty cohort rather than silently matching every patient with an unfiltered query.
+    if not conds:
+        return NLCohortResponse(query=req.query, filters=filters, total=0, patient_ids=[])
+
     rows = (
         await db.execute(
             select(Patient.patient_id).where(*conds).order_by(Patient.patient_id).limit(500)
