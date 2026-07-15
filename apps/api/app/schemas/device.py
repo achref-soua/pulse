@@ -1,8 +1,10 @@
+import uuid
+
 from pydantic import BaseModel
 
 
 class DeviceListItem(BaseModel):
-    id: str
+    id: uuid.UUID
     manufacturer: str
     name: str
     indication: str
