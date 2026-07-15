@@ -169,6 +169,38 @@ async def test_nl_cohort_applies_extracted_filters(ai_client, surgeon_user, db):
     assert data["patient_ids"] == ["NL1"]
 
 
+@pytest.mark.asyncio
+async def test_nl_cohort_fails_closed_on_no_filters(ai_client, surgeon_user, db):
+    """A failed/unmappable extraction must return an empty cohort, not every patient."""
+    from app.models.patient import AneurysmType, Patient, Phase, PlannedIntervention
+
+    db.add(Patient(patient_id="NLX", name="x", age=70, sex="M", mrn="M-NLX",
+                   aneurysm_type=AneurysmType.infrarenal_aaa, max_diameter_mm=50.0,
+                   phase=Phase.pre, planned_intervention=PlannedIntervention.evar))
+    await db.flush()
+    token = await _token(ai_client, surgeon_user)
+
+    reply = MagicMock()
+    reply.content = "{}"  # extractor mapped nothing
+    with (
+        patch("app.api.routers.ai.get_settings") as mock_settings,
+        patch("app.api.routers.ai.ChatGroq") as mock_groq,
+    ):
+        s = MagicMock()
+        s.groq_api_key = "gsk_test"
+        s.groq_router_model = "llama-3.1-8b-instant"
+        mock_settings.return_value = s
+        mock_groq.return_value.ainvoke = AsyncMock(return_value=reply)
+        resp = await ai_client.post(
+            "/ai/nl-cohort", json={"query": "asdfghjkl"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert resp.status_code == 200
+    assert resp.json()["total"] == 0
+    assert resp.json()["patient_ids"] == []
+
+
 # ── /ai/patient-summary ────────────────────────────────────────────────────
 
 
