@@ -283,11 +283,13 @@ def _device_dict(d: Device) -> dict:
 
 # ── 6. cohort aggregates ──────────────────────────────────────────────────
 @tool
-async def query_cohort(filters: dict) -> dict:
+async def query_cohort(filters: dict | None = None) -> dict:
     """Count and break down the patient cohort by structured filters. Supported keys
     (all optional): phase, planned_intervention, aneurysm_type, sex ('M'/'F'),
-    min_diameter_mm, min_age, max_age. Returns the matching total plus breakdowns by
-    phase and planned intervention. Use for questions like 'how many pre-op EVAR patients'."""
+    min_diameter_mm, min_age, max_age. Omit filters (or pass {}) to count the whole cohort.
+    Returns the matching total plus breakdowns by phase and planned intervention.
+    Use for questions like 'how many pre-op EVAR patients'."""
+    filters = filters or {}
     conds = []
     if v := filters.get("phase"):
         conds.append(Patient.phase == v)
