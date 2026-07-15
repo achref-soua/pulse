@@ -23,6 +23,8 @@ Pulse is a full-stack clinical decision-support demo for aortic and endovascular
 
 The project exists to show what a senior-level, full-stack, AI-native clinical tool looks like when built with the right foundations — not as a clinical product.
 
+> 📖 **[Pulse, Explained — the field guide (PDF)](docs/pulse-explained.pdf)** — a designed, plain-English tour of what Pulse is and how it's built, for clinicians and engineers alike.
+
 | Before (prototype)               | Pulse v1.0                                      |
 |----------------------------------|-------------------------------------------------|
 | Streamlit chat                   | Next.js 15 dashboard — full clinical UI         |
