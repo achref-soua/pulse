@@ -201,6 +201,16 @@ export function reduceMessage(m: ChatMessage, evt: SSEvent): ChatMessage {
         : m;
     case "token":
       return { ...m, content: m.content + String(evt.content) };
+    case "error":
+      // Backend signalled a failure mid-stream (e.g. AI provider error/rate limit).
+      // Surface it instead of leaving an empty bubble.
+      return {
+        ...m,
+        content:
+          m.content ||
+          String(evt.content ?? "") ||
+          "The AI service hit an error — please try again in a moment.",
+      };
     default:
       return m;
   }

@@ -63,9 +63,15 @@ async def test_get_patient_and_query_cohort(db):
 
     assert "error" in await tools.get_patient.ainvoke({"patient_id": "P-0000"})
 
-    cohort = await tools.query_cohort.ainvoke({"filters": {"phase": "pre"}})
+    # Flat args (the shape the model emits) must actually filter, not silently count everyone.
+    cohort = await tools.query_cohort.ainvoke({"phase": "pre", "planned_intervention": "EVAR"})
     assert cohort["total"] == 1
     assert cohort["by_intervention"].get("EVAR") == 1
+    # A phase synonym normalizes; a bogus filter value returns an error, not an aborted query.
+    assert (await tools.query_cohort.ainvoke({"phase": "pre-op"}))["total"] == 1
+    assert "error" in await tools.query_cohort.ainvoke({"phase": "bogus"})
+    # A filter that matches nothing yields 0 — not the whole cohort.
+    assert (await tools.query_cohort.ainvoke({"phase": "post"}))["total"] == 0
 
 
 @pytest.mark.asyncio

@@ -38,4 +38,15 @@ describe("reduceMessage — SSE event folding", () => {
     const m = reduceMessage(blank, { type: "router", content: "direct" });
     expect(m.steps[0].label).toBe("Answering directly");
   });
+
+  it("surfaces a mid-stream error instead of an empty bubble", () => {
+    const m = reduceMessage(blank, { type: "error", content: "rate-limited — retry" });
+    expect(m.content).toBe("rate-limited — retry");
+  });
+
+  it("keeps partial content when an error arrives after some tokens", () => {
+    let m = reduceMessage(blank, { type: "token", content: "Partial" });
+    m = reduceMessage(m, { type: "error", content: "boom" });
+    expect(m.content).toBe("Partial");
+  });
 });

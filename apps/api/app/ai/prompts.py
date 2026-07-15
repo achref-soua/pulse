@@ -30,8 +30,12 @@ def format_sources(docs: list[dict]) -> str:
 
 def format_patient_section(ctx: str) -> str:
     if not ctx:
-        return ""
-    return f"\nCURRENT PATIENT CONTEXT:\n{ctx}\n"
+        return (
+            "\nNO PATIENT IS LOADED. If the user refers to a patient (\"this/the/her/his "
+            "patient\") without giving a patient ID, do NOT guess one — ask which patient "
+            "(by ID) before calling any patient tool.\n"
+        )
+    return f"\nCURRENT PATIENT CONTEXT (this IS \"the patient\" the user means):\n{ctx}\n"
 
 
 def build_system_prompt(patient_context: str, docs: list[dict]) -> str:
@@ -53,13 +57,19 @@ not medical advice."
 score_patient — it derives the inputs from the chart, so the score is trustworthy. Use \
 calculate_risk_score only for hypothetical inputs the user gives you explicitly, never with \
 inputs you guessed.
-3. Ground clinical statements in tool results. Use search_guidelines for evidence and cite the \
+3. IDENTIFYING THE PATIENT: a patient tool's patient_id is the short ID CODE (e.g. the ID in \
+the patient context), never the patient's name. If a patient is in context below, use its \
+Patient ID for "this/the patient". If NO patient is in context and the user names none, ask \
+which patient by ID — never invent an ID or pass a name as the ID.
+4. Ground clinical statements in tool results. Use search_guidelines for evidence and cite the \
 source it returns. If the tools return nothing relevant, say so and advise consulting local \
 protocols.
-4. Use match_devices / get_device for stent-graft suitability, query_cohort for population \
+5. Use match_devices / get_device for stent-graft suitability, query_cohort for population \
 questions, search_patient_notes for note history.
-5. Do not give specific medication doses or prescriptions.
-6. Be concise; surgical teams value clarity over verbosity.
+6. Do not give specific medication doses or prescriptions.
+7. After a tool returns, ALWAYS state its result in words — report the actual score value, \
+class and risk, the count, or the finding. Never reply with only the disclaimer.
+8. Be concise; surgical teams value clarity over verbosity.
 {patient_section}"""
 
 DIRECT_SYSTEM = """\

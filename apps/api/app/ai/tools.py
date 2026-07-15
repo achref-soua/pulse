@@ -92,17 +92,25 @@ async def calculate_risk_score(kind: str, inputs: dict) -> dict:
 
 # ── patient serialization ─────────────────────────────────────────────────
 async def _load_patient(patient_id: str) -> Patient | None:
-    result = await _db().execute(
-        select(Patient)
-        .where(Patient.patient_id == patient_id)
-        .options(
-            selectinload(Patient.comorbidities),
-            selectinload(Patient.medications),
-            selectinload(Patient.vitals),
-            selectinload(Patient.labs),
-        )
+    opts = (
+        selectinload(Patient.comorbidities),
+        selectinload(Patient.medications),
+        selectinload(Patient.vitals),
+        selectinload(Patient.labs),
     )
-    return result.scalar_one_or_none()
+    ident = (patient_id or "").strip()
+    result = await _db().execute(
+        select(Patient).where(Patient.patient_id == ident).options(*opts)
+    )
+    p = result.scalar_one_or_none()
+    if p is None and ident:
+        # ponytail: tolerate the model passing a name instead of the ID code; ID-first,
+        # name (case-insensitive) as a single fallback so grounding still resolves.
+        result = await _db().execute(
+            select(Patient).where(Patient.name.ilike(ident)).options(*opts).limit(1)
+        )
+        p = result.scalar_one_or_none()
+    return p
 
 
 def _patient_dict(p: Patient) -> dict:
@@ -162,7 +170,8 @@ async def score_patient(patient_id: str) -> dict:
 async def get_patient(patient_id: str) -> dict:
     """Fetch a patient's structured clinical record: demographics, aortic anatomy,
     comorbidities, medications and latest vitals. Use this before scoring so you can
-    read (not invent) the calculator inputs. patient_id is the short code e.g. 'P-0042'."""
+    read (not invent) the calculator inputs. patient_id is the short ID code shown in the
+    patient context or roster — never invent one, and never pass the patient's name."""
     p = await _load_patient(patient_id)
     if p is None:
         return {"error": f"patient '{patient_id}' not found"}
@@ -282,29 +291,68 @@ def _device_dict(d: Device) -> dict:
 
 
 # ── 6. cohort aggregates ──────────────────────────────────────────────────
+# Allowed enum vocabularies + common synonyms the model tends to emit. Validating up front
+# keeps an out-of-vocab value (e.g. "pre-op") from raising a DB error that aborts the whole
+# transaction — and from being silently dropped into a misleading unfiltered count.
+_PHASE_VALUES = {"pre", "intra", "post"}
+_PHASE_SYNONYMS = {"pre-op": "pre", "preop": "pre", "pre-operative": "pre", "preoperative": "pre",
+                   "intra-op": "intra", "intraop": "intra", "post-op": "post", "postop": "post",
+                   "post-operative": "post", "postoperative": "post"}
+_INTERVENTIONS = {"EVAR", "TEVAR", "open_graft", "surveillance"}
+_ANEURYSM_TYPES = {"infrarenal_AAA", "juxtarenal_AAA", "TAA", "ascending"}
+
+
+def _norm_phase(v: str) -> str | None:
+    v = str(v).strip().lower()
+    return v if v in _PHASE_VALUES else _PHASE_SYNONYMS.get(v)
+
+
 @tool
-async def query_cohort(filters: dict | None = None) -> dict:
-    """Count and break down the patient cohort by structured filters. Supported keys
-    (all optional): phase, planned_intervention, aneurysm_type, sex ('M'/'F'),
-    min_diameter_mm, min_age, max_age. Omit filters (or pass {}) to count the whole cohort.
-    Returns the matching total plus breakdowns by phase and planned intervention.
-    Use for questions like 'how many pre-op EVAR patients'."""
-    filters = filters or {}
+async def query_cohort(
+    phase: str | None = None,
+    planned_intervention: str | None = None,
+    aneurysm_type: str | None = None,
+    sex: str | None = None,
+    min_diameter_mm: float | None = None,
+    min_age: int | None = None,
+    max_age: int | None = None,
+) -> dict:
+    """Count and break down the patient cohort by structured filters. All args optional —
+    pass only the ones the question needs; pass none to count the whole cohort.
+      phase: 'pre' | 'intra' | 'post'
+      planned_intervention: 'EVAR' | 'TEVAR' | 'open_graft' | 'surveillance'
+      aneurysm_type: 'infrarenal_AAA' | 'juxtarenal_AAA' | 'TAA' | 'ascending'
+      sex: 'M' | 'F';  min_diameter_mm / min_age / max_age: numbers
+    Returns the matching total plus breakdowns by phase and planned intervention. Report the
+    'total' — it already reflects the filters. Use for e.g. 'how many pre-op EVAR patients'."""
     conds = []
-    if v := filters.get("phase"):
-        conds.append(Patient.phase == v)
-    if v := filters.get("planned_intervention"):
-        conds.append(Patient.planned_intervention == v)
-    if v := filters.get("aneurysm_type"):
-        conds.append(Patient.aneurysm_type == v)
-    if v := filters.get("sex"):
-        conds.append(Patient.sex == v)
-    if (v := filters.get("min_diameter_mm")) is not None:
-        conds.append(Patient.max_diameter_mm >= v)
-    if (v := filters.get("min_age")) is not None:
-        conds.append(Patient.age >= v)
-    if (v := filters.get("max_age")) is not None:
-        conds.append(Patient.age <= v)
+    if phase:
+        norm = _norm_phase(phase)
+        if norm is None:
+            return {"error": f"invalid phase '{phase}'. Use one of: "
+                             f"{', '.join(sorted(_PHASE_VALUES))}"}
+        conds.append(Patient.phase == norm)
+    if planned_intervention:
+        if planned_intervention not in _INTERVENTIONS:
+            return {"error": f"invalid planned_intervention '{planned_intervention}'. Use one of: "
+                             f"{', '.join(sorted(_INTERVENTIONS))}"}
+        conds.append(Patient.planned_intervention == planned_intervention)
+    if aneurysm_type:
+        if aneurysm_type not in _ANEURYSM_TYPES:
+            return {"error": f"invalid aneurysm_type '{aneurysm_type}'. Use one of: "
+                             f"{', '.join(sorted(_ANEURYSM_TYPES))}"}
+        conds.append(Patient.aneurysm_type == aneurysm_type)
+    if sex:
+        s = str(sex).strip().upper()
+        if s not in {"M", "F"}:
+            return {"error": f"invalid sex '{sex}'. Use 'M' or 'F'."}
+        conds.append(Patient.sex == s)
+    if min_diameter_mm is not None:
+        conds.append(Patient.max_diameter_mm >= min_diameter_mm)
+    if min_age is not None:
+        conds.append(Patient.age >= min_age)
+    if max_age is not None:
+        conds.append(Patient.age <= max_age)
 
     db = _db()
     total = (await db.execute(select(func.count()).select_from(Patient).where(*conds))).scalar_one()
