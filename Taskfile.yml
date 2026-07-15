@@ -25,6 +25,11 @@ tasks:
     desc: Seed the database with synthetic data and populate Quiver collections
     cmd: docker compose exec api python -m app.seed.main
 
+  mcp:
+    desc: Run the Pulse MCP server over stdio (external agents connect to this)
+    dir: apps/api
+    cmd: uv run python -m app.mcp
+
   test:
     desc: Run all tests (backend + frontend)
     cmds:
