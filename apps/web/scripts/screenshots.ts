@@ -22,12 +22,24 @@ const SURGEON_PASSWORD = process.env.SURGEON_PASSWORD ?? "demo-surgeon-2024";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@demo.pulse";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "demo-admin-2024";
 
+// Capture theme: "light" (default) or "dark". Dark shots get a -dark suffix so both
+// sets can live side by side (run the script once per theme; see `task screenshots`).
+const THEME = process.env.THEME === "dark" ? "dark" : "light";
+const SUFFIX = THEME === "dark" ? "-dark" : "";
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 async function shot(page: Page, name: string, fullPage = false) {
-  const dest = path.join(OUT_DIR, `${name}.png`);
+  const dest = path.join(OUT_DIR, `${name}${SUFFIX}.png`);
   await page.screenshot({ path: dest, fullPage });
-  console.log(`  ✓ ${name}.png`);
+  console.log(`  ✓ ${name}${SUFFIX}.png`);
+}
+
+/** Pin next-themes to the capture theme via its localStorage key, then reload. */
+async function applyTheme(page: Page) {
+  await page.evaluate((t) => localStorage.setItem("theme", t), THEME);
+  await page.reload();
+  await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
 }
 
 /** Get tokens from API via Node fetch (bypasses browser CORS), inject into localStorage. */
@@ -47,11 +59,12 @@ async function loginAs(page: Page, email: string, password: string) {
   await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState("domcontentloaded");
   await page.evaluate(
-    ({ at, rt }) => {
+    ({ at, rt, theme }) => {
       localStorage.setItem("pulse_access_token", at);
       localStorage.setItem("pulse_refresh_token", rt);
+      localStorage.setItem("theme", theme);
     },
-    { at: access_token, rt: refresh_token }
+    { at: access_token, rt: refresh_token, theme: THEME }
   );
   await page.goto(`${BASE_URL}/dashboard`);
   await page.waitForURL(/\/dashboard/, { timeout: 15000 });
@@ -100,9 +113,17 @@ async function run() {
     const page = await ctx.newPage();
     await loginAs(page, SURGEON_EMAIL, SURGEON_PASSWORD);
 
-    // 1. Login screen (before auth)
-    const anonCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    // 1. Public landing page + login (before auth)
+    const anonCtx = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      colorScheme: THEME,
+    });
     const anonPage = await anonCtx.newPage();
+    await anonPage.goto(`${BASE_URL}/`);
+    await anonPage.evaluate((t) => localStorage.setItem("theme", t), THEME);
+    await anonPage.reload();
+    await idle(anonPage, 700);
+    await shot(anonPage, "landing", true);
     await anonPage.goto(`${BASE_URL}/login`);
     await idle(anonPage, 400);
     await shot(anonPage, "login");
@@ -222,7 +243,49 @@ async function run() {
       await shot(page, "ai-copilot-panel");
     }
 
-    // 10. Settings
+    // 10. Analytics dashboard
+    await page.goto(`${BASE_URL}/analytics`);
+    await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+    await idle(page, 1200);
+    await shot(page, "analytics");
+
+    // 11. Copilot full page — a suggested prompt, so the agent timeline + sources render
+    await page.goto(`${BASE_URL}/copilot`);
+    await idle(page, 800);
+    const prompt = page.locator("button", { hasText: /RCRI|EVAR|cohort|IFU/i }).first();
+    if (await prompt.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await prompt.click();
+      // Wait for the agent to finish: the input re-enables when streaming ends.
+      await page
+        .waitForFunction(
+          () => {
+            const ta = document.querySelector("textarea");
+            const hasAnswer = /RCRI|EVAR|patient|cohort|score|⚠/i.test(
+              document.body.innerText.split("Try asking")[0] ?? ""
+            );
+            return ta && !(ta as HTMLTextAreaElement).disabled && hasAnswer;
+          },
+          { timeout: 25000 }
+        )
+        .catch(() => {});
+      await idle(page, 1200);
+    }
+    await shot(page, "copilot");
+
+    // 12. Command palette (⌘K)
+    await page.goto(`${BASE_URL}/dashboard`);
+    await idle(page, 600);
+    await page.keyboard.press("Meta+k");
+    await idle(page, 500);
+    const palette = page.locator("[cmdk-root], [cmdk-input]").first();
+    if (await palette.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await page.keyboard.type("patient");
+      await idle(page, 800);
+      await shot(page, "command-palette");
+      await page.keyboard.press("Escape");
+    }
+
+    // 13. Settings
     await page.goto(`${BASE_URL}/settings`);
     await idle(page, 500);
     await shot(page, "settings");
