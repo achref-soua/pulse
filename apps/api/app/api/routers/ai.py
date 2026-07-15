@@ -75,6 +75,7 @@ def _patient_context_str(p: Patient) -> str:
             f"Temp={last_vital.temp_c}°C, Consciousness={last_vital.consciousness}"
         )
     return (
+        f"Patient ID: {p.patient_id} (use this exact ID for any tool needing a patient_id)\n"
         f"Patient: {p.name}, {p.age}y {p.sex}\n"
         f"Diagnosis: {p.aneurysm_type or '—'}, max diameter {p.max_diameter_mm or '—'} mm, "
         f"location {p.location or '—'}\n"
@@ -180,7 +181,12 @@ async def chat_stream(
                 yield _sse(ev)
         except Exception as exc:
             log.error("ai.chat error", error=str(exc))
-            yield _sse({"type": "error", "content": "AI service error — please retry."})
+            msg = str(exc).lower()
+            if "rate limit" in msg or "429" in msg:
+                content = "The AI provider is rate-limited right now — please try again shortly."
+            else:
+                content = "AI service error — please retry."
+            yield _sse({"type": "error", "content": content})
             return
 
         # Persist the turn for multi-turn memory (best-effort — never breaks the stream).

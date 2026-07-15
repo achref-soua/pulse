@@ -75,7 +75,7 @@ async def query_cohort(filters: dict) -> dict:
     """Count and break down the patient cohort by structured filters (phase,
     planned_intervention, aneurysm_type, sex, min_diameter_mm, min_age, max_age)."""
     async with _session():
-        return await t.query_cohort.ainvoke({"filters": filters})
+        return await t.query_cohort.ainvoke(filters or {})
 
 
 def main() -> None:

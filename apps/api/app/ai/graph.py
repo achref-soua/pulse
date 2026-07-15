@@ -32,9 +32,11 @@ log = structlog.get_logger()
 _ROUTER_PROMPT = """You triage requests for a clinical decision-support assistant for aortic \
 and endovascular surgery. Reply with exactly one word:
 AGENT — if answering needs a patient record, a risk score, device/IFU matching, cohort counts, \
-clinical notes, or a guideline/literature lookup.
-DIRECT — if it is a general clinical-knowledge question needing no data lookup.
+clinical notes, or a guideline/literature lookup; OR if the request is about a specific patient \
+("this/the/her/his patient", a patient ID or name).
+DIRECT — only if it is a general clinical-knowledge question needing no patient data or lookup.
 
+Patient loaded in context: {patient_state}.
 Request: {query}"""
 
 
@@ -66,9 +68,10 @@ def build_graph(agent_model=None, router_model=None):
 
     async def router_node(state: PulseState) -> dict:
         query = _last_human(state["messages"])
+        patient_state = "yes" if state.get("patient_context") else "no"
         try:
             reply = await router_model.ainvoke(
-                [HumanMessage(content=_ROUTER_PROMPT.format(query=query))]
+                [HumanMessage(content=_ROUTER_PROMPT.format(query=query, patient_state=patient_state))]
             )
             route = _parse_route(str(reply.content))
         except Exception as exc:  # router is a nicety — fall back to the full agent
@@ -154,7 +157,23 @@ async def run_agent_events(
                 final += chunk.content
                 yield {"type": "token", "content": chunk.content}
 
+    # Safety net: the model occasionally ends a turn with no text (e.g. it decides it
+    # can't proceed but says nothing). Never stream an empty bubble — ask for what's missing.
+    if not final.strip():
+        fallback = _EMPTY_NO_PATIENT if not patient_context else _EMPTY_GENERIC
+        for word in fallback.split(" "):
+            yield {"type": "token", "content": word + " "}
+        final = fallback
+
     yield {"type": "done", "content": final}
+
+
+_DISCLAIMER = "⚠️ Educational demo on synthetic data — not for clinical use; not medical advice."
+_EMPTY_NO_PATIENT = (
+    "Which patient would you like me to look at? Please give a patient ID (for example from "
+    f"the roster) and I'll pull the record.\n\n{_DISCLAIMER}"
+)
+_EMPTY_GENERIC = f"I couldn't produce a response to that — please try rephrasing.\n\n{_DISCLAIMER}"
 
 
 def _as_sources(payload) -> list:
