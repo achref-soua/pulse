@@ -1,6 +1,7 @@
 "use client";
 
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
@@ -36,7 +37,7 @@ export default function SettingsPage() {
             <span className="text-sm text-muted-foreground">{user?.email ?? "—"}</span>
           </SettingRow>
           <SettingRow label="Role" description="Assigned by an admin">
-            <span className="text-xs capitalize rounded-full bg-indigo-900/40 text-indigo-300 border border-indigo-700/30 px-2 py-0.5">
+            <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs capitalize text-primary">
               {user?.role ?? "—"}
             </span>
           </SettingRow>
@@ -47,12 +48,8 @@ export default function SettingsPage() {
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Appearance</h2>
         <div className="rounded-lg border border-border bg-card px-4">
-          <SettingRow label="Theme" description="Interface colour scheme">
-            <div className="flex items-center gap-2">
-              <span className="text-xs rounded-full bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5">
-                Dark (default)
-              </span>
-            </div>
+          <SettingRow label="Theme" description="Light, dark, or match your system">
+            <ThemeToggle />
           </SettingRow>
         </div>
       </section>
@@ -61,14 +58,14 @@ export default function SettingsPage() {
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
           AI Copilot
-          <span className="ml-2 text-xs font-normal normal-case text-emerald-400">— active (GROQ_API_KEY set)</span>
+          <span className="ml-2 text-xs font-normal normal-case text-success">— active (GROQ_API_KEY set)</span>
         </h2>
         <div className="rounded-lg border border-border bg-card px-4">
           <SettingRow
             label="Default model"
             description="Groq model used for patient summaries and streaming chat"
           >
-            <span className="text-xs font-mono rounded bg-indigo-900/30 text-indigo-300 border border-indigo-700/30 px-2 py-0.5">
+            <span className="rounded border border-primary/25 bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">
               llama-3.3-70b-versatile
             </span>
           </SettingRow>
@@ -76,7 +73,7 @@ export default function SettingsPage() {
             label="Reranking"
             description="Cross-encoder (ms-marco-MiniLM-L-6-v2) reranks RAG candidates before generation"
           >
-            <span className="text-xs rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30 px-2 py-0.5">
+            <span className="rounded-full border border-success/25 bg-success/10 px-2 py-0.5 text-xs text-success">
               Enabled
             </span>
           </SettingRow>
@@ -84,7 +81,7 @@ export default function SettingsPage() {
             label="Streaming"
             description="Chat responses stream token-by-token via SSE"
           >
-            <span className="text-xs rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30 px-2 py-0.5">
+            <span className="rounded-full border border-success/25 bg-success/10 px-2 py-0.5 text-xs text-success">
               Enabled
             </span>
           </SettingRow>
@@ -110,7 +107,7 @@ export default function SettingsPage() {
             <span className="text-xs text-muted-foreground font-mono">v1.0.0</span>
           </SettingRow>
           <SettingRow label="Data" description="All patient data is synthetic — generated for demonstration only">
-            <span className="text-xs rounded-full bg-amber-900/30 text-amber-300 border border-amber-700/30 px-2 py-0.5">
+            <span className="rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-xs text-warning">
               Synthetic
             </span>
           </SettingRow>

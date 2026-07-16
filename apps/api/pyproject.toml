@@ -1,6 +1,6 @@
 [project]
 name = "pulse-api"
-version = "1.0.0"
+version = "2.0.0"
 description = "Pulse API — aortic surgery intelligence backend"
 requires-python = ">=3.12"
 dependencies = [
@@ -22,10 +22,11 @@ dependencies = [
     "langgraph>=0.2.67",
     "langgraph-checkpoint-redis>=0.0.4",
     "faker>=33.3.1",
-    "quiver-client",
+    "quiver-client>=0.35.0",
     "reportlab>=4.2.5",
     "python-multipart>=0.0.20",
     "structlog>=24.4.0",
+    "mcp>=1.28.1",
 ]
 
 [tool.uv]
@@ -67,6 +68,3 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-
-[tool.uv.sources]
-quiver-client = { path = "../../../quiver/sdks/python", editable = true }

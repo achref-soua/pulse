@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bot } from "lucide-react";
+import { cn } from "@pulse/ui";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { AICopilotPanel } from "@/components/ai/AICopilotPanel";
+import { CommandPalette } from "@/components/command/CommandPalette";
 import { PatientContextProvider } from "@/contexts/PatientContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
@@ -38,24 +40,31 @@ function AppShell({ children }: { children: React.ReactNode }) {
       />
       <div className="flex-1 ml-60">
         <TopBar />
-        <main className="pt-12 pb-10 min-h-screen">{children}</main>
+        <main className="min-h-screen pb-10 pt-14">{children}</main>
       </div>
 
       {/* Floating AI Copilot */}
       <button
         onClick={() => setCopilotOpen((o) => !o)}
         title="AI Copilot"
-        className={`fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-colors ${
-          copilotOpen
-            ? "bg-indigo-600 text-white"
-            : "bg-indigo-700 hover:bg-indigo-600 text-white"
-        }`}
+        className={cn(
+          "fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg transition-all hover:shadow-glow active:translate-y-px",
+          copilotOpen && "shadow-glow"
+        )}
       >
         <Bot className="h-4 w-4" />
         AI Copilot
       </button>
 
       {copilotOpen && <AICopilotPanel onClose={() => setCopilotOpen(false)} />}
+
+      <CommandPalette />
+
+      <footer className="fixed bottom-0 left-60 right-0 z-20 border-t border-border/60 bg-background/80 px-4 py-1 text-center backdrop-blur-sm">
+        <p className="text-xs text-muted-foreground">
+          Educational demo on synthetic data — not for clinical use; not medical advice.
+        </p>
+      </footer>
     </div>
   );
 }

@@ -1,8 +1,10 @@
+import uuid
+
 from pydantic import BaseModel
 
 
 class UserListItem(BaseModel):
-    id: str
+    id: uuid.UUID
     email: str
     full_name: str
     role: str

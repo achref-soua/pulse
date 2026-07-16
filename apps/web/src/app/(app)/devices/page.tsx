@@ -29,7 +29,7 @@ interface Device {
 function IndicationBadge({ indication }: { indication: string }) {
   const colors =
     indication === "EVAR"
-      ? "bg-indigo-900/40 text-indigo-300 border-indigo-700/40"
+      ? "bg-primary/12 text-primary border-primary/25"
       : "bg-purple-900/40 text-purple-300 border-purple-700/40";
   return (
     <span className={`text-xs font-medium rounded-full border px-2 py-0.5 ${colors}`}>
@@ -49,7 +49,7 @@ function DeviceModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
@@ -110,7 +110,7 @@ function DeviceModal({
               <ul className="space-y-1.5">
                 {device.contraindications.map((c, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" />
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
                     {c}
                   </li>
                 ))}
@@ -127,7 +127,7 @@ function DeviceModal({
               <ol className="space-y-2">
                 {device.deployment_steps.map((step, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
-                    <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-900/50 text-xs font-medium text-indigo-300">
+                    <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary/12 text-xs font-medium text-primary">
                       {i + 1}
                     </span>
                     {step}
@@ -148,7 +148,7 @@ function DeviceModal({
           </button>
           <button
             onClick={() => { onMatchToPatient(device); onClose(); }}
-            className="text-sm px-4 py-2 rounded-md bg-indigo-700 hover:bg-indigo-600 text-white transition-colors"
+            className="text-sm px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
           >
             Match to patient →
           </button>
@@ -162,7 +162,7 @@ function DeviceCard({ device, onClick }: { device: Device; onClick: () => void }
   return (
     <button
       onClick={onClick}
-      className="text-left rounded-lg border border-border bg-card p-4 hover:border-indigo-700/50 hover:bg-indigo-900/10 transition-colors space-y-3 w-full"
+      className="text-left rounded-lg border border-border bg-card p-4 hover:border-primary/25 hover:bg-primary/10 transition-colors space-y-3 w-full"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -184,7 +184,7 @@ function DeviceCard({ device, onClick }: { device: Device; onClick: () => void }
           </div>
         ))}
       </dl>
-      <p className="text-xs text-indigo-400 font-medium">View IFU specs →</p>
+      <p className="text-xs text-primary font-medium">View IFU specs →</p>
     </button>
   );
 }
@@ -222,7 +222,7 @@ export default function DevicesPage() {
             onClick={() => setFilter(f)}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
               filter === f
-                ? "bg-indigo-700 text-white"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
             }`}
           >

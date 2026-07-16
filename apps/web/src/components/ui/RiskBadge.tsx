@@ -2,11 +2,13 @@ import { cn } from "@pulse/ui";
 
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 
+// Clinical severity coding needs four distinct hues; each carries an explicit
+// light and dark treatment so it reads correctly in both themes.
 const styles: Record<RiskLevel, string> = {
-  low: "bg-emerald-900/40 text-emerald-300 border border-emerald-700/50",
-  medium: "bg-amber-900/40 text-amber-300 border border-amber-700/50",
-  high: "bg-orange-900/40 text-orange-300 border border-orange-700/50",
-  critical: "bg-rose-900/40 text-rose-300 border border-rose-700/50",
+  low: "border border-emerald-600/20 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400",
+  medium: "border border-amber-600/20 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400",
+  high: "border border-orange-600/20 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400",
+  critical: "border border-rose-600/20 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400",
 };
 
 const labels: Record<RiskLevel, string> = {

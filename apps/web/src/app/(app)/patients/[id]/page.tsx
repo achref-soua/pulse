@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 import { api } from "@/lib/api";
+import { useChartColors } from "@/lib/chartTheme";
 import { AnatomyCard } from "@/components/ui/AnatomyCard";
 import { RiskBadge, news2ToRiskLevel, responseToRiskLevel } from "@/components/ui/RiskBadge";
 import { SkeletonCard } from "@/components/ui/SkeletonTable";
@@ -82,8 +83,8 @@ const COMORBIDITY_LABELS: Record<keyof Comorbidity, string> = {
 };
 
 const NOTE_TYPE_COLORS: Record<string, string> = {
-  referral: "border-l-indigo-500", pre_op_assessment: "border-l-amber-500",
-  op_note: "border-l-rose-500", progress: "border-l-emerald-500", discharge: "border-l-slate-500",
+  referral: "border-l-primary", pre_op_assessment: "border-l-warning",
+  op_note: "border-l-destructive", progress: "border-l-success", discharge: "border-l-muted-foreground",
 };
 
 /* ── Overview Tab ── */
@@ -109,7 +110,7 @@ function OverviewTab({ patient }: { patient: PatientDetail }) {
       {/* Comorbidities */}
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Heart className="h-4 w-4 text-rose-400" />
+          <Heart className="h-4 w-4 text-destructive" />
           Comorbidities
         </h3>
         {!comorbidity ? (
@@ -121,11 +122,11 @@ function OverviewTab({ patient }: { patient: PatientDetail }) {
                 key={key}
                 className={`flex items-center gap-2 text-xs py-1 px-2 rounded ${
                   comorbidity[key]
-                    ? "bg-rose-900/20 text-rose-300"
+                    ? "bg-destructive/10 text-destructive"
                     : "text-muted-foreground"
                 }`}
               >
-                <span className={`h-2 w-2 rounded-full shrink-0 ${comorbidity[key] ? "bg-rose-400" : "bg-muted-foreground/30"}`} />
+                <span className={`h-2 w-2 rounded-full shrink-0 ${comorbidity[key] ? "bg-destructive" : "bg-muted-foreground/30"}`} />
                 {COMORBIDITY_LABELS[key]}
               </li>
             ))}
@@ -136,7 +137,7 @@ function OverviewTab({ patient }: { patient: PatientDetail }) {
       {/* Latest labs */}
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <TestTube className="h-4 w-4 text-indigo-400" />
+          <TestTube className="h-4 w-4 text-primary" />
           Latest Labs {latestLab && <span className="text-xs text-muted-foreground font-normal">{new Date(latestLab.taken_at).toLocaleDateString()}</span>}
         </h3>
         {!latestLab ? (
@@ -166,7 +167,7 @@ function OverviewTab({ patient }: { patient: PatientDetail }) {
       {/* Medications */}
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Pill className="h-4 w-4 text-emerald-400" />
+          <Pill className="h-4 w-4 text-success" />
           Medications
         </h3>
         {patient.medications.length === 0 ? (
@@ -258,9 +259,9 @@ function RiskTab({ patient }: { patient: PatientDetail }) {
   });
 
   const ifuColor = (overall: string) => {
-    if (overall === "suitable") return "text-emerald-400";
-    if (overall === "borderline") return "text-amber-400";
-    return "text-rose-400";
+    if (overall === "suitable") return "text-success";
+    if (overall === "borderline") return "text-warning";
+    return "text-destructive";
   };
 
   return (
@@ -331,7 +332,7 @@ function RiskTab({ patient }: { patient: PatientDetail }) {
                     <div key={c.name} className="flex items-start justify-between text-xs gap-4">
                       <span className="text-muted-foreground">{c.name}</span>
                       <div className="text-right shrink-0">
-                        <span className={c.status === "suitable" ? "text-emerald-400" : c.status === "borderline" ? "text-amber-400" : "text-rose-400"}>
+                        <span className={c.status === "suitable" ? "text-success" : c.status === "borderline" ? "text-warning" : "text-destructive"}>
                           {c.status}
                         </span>
                         <span className="text-muted-foreground ml-2">(pt: {c.patient_value} | IFU: {c.ifu_threshold})</span>
@@ -398,6 +399,7 @@ function PostOpTab({ vitals, patientId }: { vitals: Vital[]; patientId: string }
     },
   });
 
+  const cc = useChartColors();
   const sortedVitals = [...vitals]
     .sort((a, b) => a.taken_at.localeCompare(b.taken_at))
     .map((v) => ({
@@ -435,11 +437,11 @@ function PostOpTab({ vitals, patientId }: { vitals: Vital[]; patientId: string }
           </h3>
           <ResponsiveContainer width="100%" height={120}>
             <LineChart data={sortedVitals} margin={{ top: 0, right: 0, bottom: 0, left: -25 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="time" tick={{ fontSize: 9, fill: "#94a3b8" }} />
-              <YAxis tick={{ fontSize: 9, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: 6, fontSize: 11 }} />
-              <Line type="monotone" dataKey={key} stroke="#6366f1" dot={{ r: 2 }} strokeWidth={1.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke={cc.grid} />
+              <XAxis dataKey="time" tick={{ fontSize: 9, fill: cc.axis }} />
+              <YAxis tick={{ fontSize: 9, fill: cc.axis }} />
+              <Tooltip contentStyle={{ backgroundColor: cc.tooltipBg, border: `1px solid ${cc.tooltipBorder}`, borderRadius: 8, fontSize: 11, color: cc.tooltipText }} />
+              <Line type="monotone" dataKey={key} stroke={cc.chart[0]} dot={{ r: 2 }} strokeWidth={1.5} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -460,11 +462,12 @@ function AISummaryTab({ patientId }: { patientId: string }) {
   });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   if (!data && !isLoading && !error) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 flex flex-col items-center gap-4 text-center">
-        <Bot className="h-10 w-10 text-indigo-400" />
+        <Bot className="h-10 w-10 text-primary" />
         <div>
           <p className="text-sm font-semibold text-foreground">AI Clinical Summary</p>
           <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -473,11 +476,11 @@ function AISummaryTab({ patientId }: { patientId: string }) {
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 rounded-md bg-indigo-700 hover:bg-indigo-600 text-white text-sm font-medium transition-colors"
+          className="px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors"
         >
           Generate Summary
         </button>
-        <p className="text-xs text-rose-400/80">
+        <p className="text-xs text-destructive/80">
           ⚠️ Educational demo on synthetic data — not for clinical use; not medical advice.
         </p>
       </div>
@@ -488,7 +491,7 @@ function AISummaryTab({ patientId }: { patientId: string }) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 flex flex-col items-center gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Bot className="h-5 w-5 animate-pulse text-indigo-400" />
+          <Bot className="h-5 w-5 animate-pulse text-primary" />
           Generating AI summary via Groq…
         </div>
         <div className="w-full space-y-2 mt-2">
@@ -504,14 +507,12 @@ function AISummaryTab({ patientId }: { patientId: string }) {
     const msg = (error as Error).message;
     return (
       <div className="rounded-lg border border-border bg-card p-6 space-y-3">
-        <p className="text-sm font-medium text-rose-400">Summary generation failed</p>
+        <p className="text-sm font-medium text-destructive">Summary generation failed</p>
         <p className="text-xs text-muted-foreground">{msg.includes("GROQ") || msg.includes("503") ? "AI features require GROQ_API_KEY — add it to .env and restart the stack." : msg}</p>
-        <button onClick={() => refetch()} className="text-xs text-indigo-400 hover:underline">Retry</button>
+        <button onClick={() => refetch()} className="text-xs text-primary hover:underline">Retry</button>
       </div>
     );
   }
-
-  const [pdfLoading, setPdfLoading] = useState(false);
 
   async function downloadPdf() {
     setPdfLoading(true);
@@ -541,13 +542,13 @@ function AISummaryTab({ patientId }: { patientId: string }) {
       <div className="rounded-lg border border-border bg-card p-5 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Bot className="h-4 w-4 text-indigo-400" />
+            <Bot className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold text-foreground">AI Clinical Summary</span>
           </div>
           <button
             onClick={downloadPdf}
             disabled={pdfLoading}
-            className="text-xs px-3 py-1 rounded border border-indigo-700/50 text-indigo-400 hover:bg-indigo-900/30 transition-colors disabled:opacity-50"
+            className="text-xs px-3 py-1 rounded border border-primary/25 text-primary hover:bg-primary/12 transition-colors disabled:opacity-50"
           >
             {pdfLoading ? "Generating…" : "↓ PDF Report"}
           </button>
@@ -555,7 +556,7 @@ function AISummaryTab({ patientId }: { patientId: string }) {
         <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
           {data?.summary}
         </div>
-        <p className="text-xs text-rose-400/80 mt-2">
+        <p className="text-xs text-destructive/80 mt-2">
           ⚠️ Educational demo on synthetic data — not for clinical use; not medical advice.
         </p>
       </div>
@@ -573,7 +574,7 @@ function AISummaryTab({ patientId }: { patientId: string }) {
               <summary className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-muted/20 list-none">
                 <span className="text-xs font-mono text-muted-foreground shrink-0">[{i + 1}]</span>
                 <span className="text-xs font-medium text-foreground flex-1">{s.title}</span>
-                <span className="text-xs capitalize rounded-full px-1.5 py-0.5 bg-indigo-900/30 text-indigo-300">{s.type}</span>
+                <span className="text-xs capitalize rounded-full px-1.5 py-0.5 bg-primary/12 text-primary">{s.type}</span>
               </summary>
               <div className="px-4 pb-3 pt-1 text-xs text-muted-foreground leading-relaxed">
                 {s.body}
@@ -652,10 +653,10 @@ export default function PatientDetailPage({ params }: { params: Promise<{ id: st
             <span
               className={`text-xs font-medium capitalize px-2 py-1 rounded-full ${
                 patient.phase === "post"
-                  ? "bg-emerald-900/30 text-emerald-300"
+                  ? "bg-success/10 text-success"
                   : patient.phase === "intra"
-                  ? "bg-amber-900/30 text-amber-300"
-                  : "bg-indigo-900/30 text-indigo-300"
+                  ? "bg-warning/10 text-warning"
+                  : "bg-primary/12 text-primary"
               }`}
             >
               {patient.phase}
@@ -681,7 +682,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ id: st
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab
-                  ? "border-indigo-500 text-foreground"
+                  ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               }`}
             >

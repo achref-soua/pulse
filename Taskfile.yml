@@ -25,6 +25,11 @@ tasks:
     desc: Seed the database with synthetic data and populate Quiver collections
     cmd: docker compose exec api python -m app.seed.main
 
+  mcp:
+    desc: Run the Pulse MCP server over stdio (external agents connect to this)
+    dir: apps/api
+    cmd: uv run python -m app.mcp
+
   test:
     desc: Run all tests (backend + frontend)
     cmds:
@@ -57,9 +62,11 @@ tasks:
     cmd: pnpm playwright test
 
   screenshots:
-    desc: Capture screenshots of all screens to docs/assets/ (requires running stack)
+    desc: Capture light + dark screenshots of all screens to docs/assets/ (requires running stack)
     dir: apps/web
-    cmd: pnpm screenshots
+    cmds:
+      - THEME=light pnpm screenshots
+      - THEME=dark pnpm screenshots
 
   openapi-types:
     desc: Generate TypeScript types from the FastAPI OpenAPI schema

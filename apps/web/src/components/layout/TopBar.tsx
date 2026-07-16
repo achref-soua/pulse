@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { usePatientContext } from "@/contexts/PatientContext";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+
+function openCommandPalette() {
+  window.dispatchEvent(new Event("pulse:open-command"));
+}
 
 const routeLabels: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -39,7 +44,7 @@ export function TopBar() {
   const crumbs = getBreadcrumb(pathname);
 
   return (
-    <header className="fixed top-0 left-60 right-0 z-30 flex h-12 items-center border-b border-border bg-card/80 backdrop-blur-sm px-4 gap-4">
+    <header className="fixed top-0 left-60 right-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background/80 px-5 backdrop-blur-md">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1">
         {crumbs.map((c, i) => (
@@ -61,19 +66,33 @@ export function TopBar() {
 
       {/* Patient-in-context chip */}
       {patientId && patientName && (
-        <div className="flex items-center gap-1.5 rounded-full bg-indigo-900/40 border border-indigo-700/40 px-3 py-1 shrink-0">
-          <span className="text-xs text-indigo-300 font-medium">
+        <div className="flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 shrink-0">
+          <span className="text-xs font-medium text-primary">
             {patientId} — {patientName}
           </span>
           <button
             onClick={clearPatient}
-            className="text-indigo-400 hover:text-indigo-200 transition-colors"
+            className="text-primary/70 transition-colors hover:text-primary"
             title="Clear patient context"
           >
             <X className="h-3 w-3" />
           </button>
         </div>
       )}
+
+      <button
+        onClick={openCommandPalette}
+        className="flex shrink-0 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        title="Search (⌘K)"
+      >
+        <Search className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Search…</span>
+        <kbd className="hidden rounded border border-border bg-background px-1 font-mono text-[10px] sm:inline">
+          ⌘K
+        </kbd>
+      </button>
+
+      <ThemeToggle className="shrink-0" />
     </header>
   );
 }

@@ -53,12 +53,12 @@ export default function KnowledgePage() {
           placeholder="Search titles…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-700 w-56"
+          className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary w-56"
         />
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)}
-          className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-700"
+          className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
         >
           <option value="all">All types</option>
           <option value="guideline">Guidelines</option>
@@ -67,7 +67,7 @@ export default function KnowledgePage() {
         <select
           value={section}
           onChange={(e) => setSection(e.target.value)}
-          className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-700"
+          className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
         >
           {SECTIONS.map((s) => (
             <option key={s} value={s}>{s === "all" ? "All sections" : s.charAt(0).toUpperCase() + s.slice(1)}</option>
@@ -99,8 +99,8 @@ export default function KnowledgePage() {
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 text-xs rounded-full px-2 py-0.5 ${
                       item.type === "guideline"
-                        ? "bg-indigo-900/40 text-indigo-300"
-                        : "bg-amber-900/30 text-amber-300"
+                        ? "bg-primary/12 text-primary"
+                        : "bg-warning/10 text-warning"
                     }`}>
                       {item.type === "guideline"
                         ? <BookOpen className="h-2.5 w-2.5" />
@@ -117,7 +117,7 @@ export default function KnowledgePage() {
         </div>
       )}
 
-      <p className="text-xs text-rose-400/70">
+      <p className="text-xs text-destructive/70">
         ⚠️ Educational demo on synthetic data — not for clinical use; not medical advice.
       </p>
     </div>

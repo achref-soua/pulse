@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, Suspense } from "react";
-import { Search, Users } from "lucide-react";
+import { useCallback, useState, Suspense } from "react";
+import { Loader2, Search, Sparkles, Users, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { RiskBadge, RiskLevel } from "@/components/ui/RiskBadge";
 import { SkeletonTable } from "@/components/ui/SkeletonTable";
@@ -42,17 +42,39 @@ function PatientsContent() {
   const phase = searchParams.get("phase") ?? "";
   const intervention = searchParams.get("intervention") ?? "";
   const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  // Extra filters the NL→cohort feature can set (no dedicated controls in the UI).
+  const nlKeys = ["aneurysm_type", "sex", "min_diameter_mm", "min_age", "max_age"] as const;
+  const nlActive = nlKeys.some((k) => searchParams.get(k));
+
+  const [nlQuery, setNlQuery] = useState("");
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
+    if (value) params.set(key, value);
+    else params.delete(key);
     if (key !== "offset") params.delete("offset");
     router.push(`/patients?${params.toString()}`);
   }
+
+  function applyFilters(filters: Record<string, unknown>) {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) {
+      if (v !== null && v !== undefined && v !== "") params.set(k, String(v));
+    }
+    router.push(`/patients?${params.toString()}`);
+  }
+
+  function clearNl() {
+    const params = new URLSearchParams(searchParams.toString());
+    nlKeys.forEach((k) => params.delete(k));
+    router.push(`/patients?${params.toString()}`);
+  }
+
+  const nlMutation = useMutation({
+    mutationFn: (query: string) =>
+      api.post<{ filters: Record<string, unknown> }>("/ai/nl-cohort", { query }),
+    onSuccess: (res) => applyFilters(res.filters),
+  });
 
   const queryString = [
     `limit=${PAGE_SIZE}`,
@@ -60,12 +82,16 @@ function PatientsContent() {
     search && `search=${encodeURIComponent(search)}`,
     phase && `phase=${phase}`,
     intervention && `intervention=${intervention}`,
+    ...nlKeys.map((k) => {
+      const v = searchParams.get(k);
+      return v && `${k}=${encodeURIComponent(v)}`;
+    }),
   ]
     .filter(Boolean)
     .join("&");
 
   const { data: patients, isLoading } = useQuery({
-    queryKey: ["patients", search, phase, intervention, offset],
+    queryKey: ["patients", queryString],
     queryFn: () => api.get<PatientListItem[]>(`/patients?${queryString}`),
   });
 
@@ -86,6 +112,39 @@ function PatientsContent() {
         </p>
       </div>
 
+      {/* Natural-language cohort search */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (nlQuery.trim()) nlMutation.mutate(nlQuery.trim());
+        }}
+        className="relative"
+      >
+        <Sparkles className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+        <input
+          type="text"
+          value={nlQuery}
+          onChange={(e) => setNlQuery(e.target.value)}
+          placeholder="Ask in plain English — e.g. “post-op patients with large aneurysms over 75”"
+          className="w-full rounded-lg border border-border bg-card py-2.5 pl-9 pr-24 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <button
+          type="submit"
+          disabled={!nlQuery.trim() || nlMutation.isPending}
+          className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40"
+        >
+          {nlMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Search"}
+        </button>
+      </form>
+      {nlActive && (
+        <button
+          onClick={clearNl}
+          className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs text-primary"
+        >
+          AI filter active <X className="h-3 w-3" />
+        </button>
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48 max-w-xs">
@@ -95,13 +154,13 @@ function PatientsContent() {
             placeholder="Search name or ID…"
             value={search}
             onChange={(e) => setParam("search", e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-indigo-700"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <select
           value={phase}
           onChange={(e) => setParam("phase", e.target.value)}
-          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-700 text-foreground"
+          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
         >
           {PHASES.map((p) => (
             <option key={p} value={p}>
@@ -112,7 +171,7 @@ function PatientsContent() {
         <select
           value={intervention}
           onChange={(e) => setParam("intervention", e.target.value)}
-          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-700 text-foreground"
+          className="text-sm rounded-md border border-border bg-card px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
         >
           {INTERVENTIONS.map((i) => (
             <option key={i} value={i}>
@@ -177,10 +236,10 @@ function PatientsContent() {
                       <span
                         className={`text-xs font-medium capitalize ${
                           p.phase === "post"
-                            ? "text-emerald-400"
+                            ? "text-success"
                             : p.phase === "intra"
-                            ? "text-amber-400"
-                            : "text-indigo-400"
+                            ? "text-warning"
+                            : "text-primary"
                         }`}
                       >
                         {p.phase}
