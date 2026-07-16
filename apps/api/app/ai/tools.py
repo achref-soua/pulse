@@ -105,9 +105,13 @@ async def _load_patient(patient_id: str) -> Patient | None:
     p = result.scalar_one_or_none()
     if p is None and ident:
         # ponytail: tolerate the model passing a name instead of the ID code; ID-first,
-        # name (case-insensitive) as a single fallback so grounding still resolves.
+        # exact case-insensitive name as a single fallback. Use lower()== (not ilike) so a
+        # value containing %/_ can't act as a wildcard and match an arbitrary patient.
         result = await _db().execute(
-            select(Patient).where(Patient.name.ilike(ident)).options(*opts).limit(1)
+            select(Patient)
+            .where(func.lower(Patient.name) == ident.lower())
+            .options(*opts)
+            .limit(1)
         )
         p = result.scalar_one_or_none()
     return p

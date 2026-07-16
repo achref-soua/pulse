@@ -63,6 +63,11 @@ async def test_get_patient_and_query_cohort(db):
 
     assert "error" in await tools.get_patient.ainvoke({"patient_id": "P-0000"})
 
+    # Name fallback resolves an exact (case-insensitive) name...
+    assert (await tools.get_patient.ainvoke({"patient_id": "test aorta"}))["patient_id"] == "P-9001"
+    # ...but a LIKE wildcard must NOT match an arbitrary patient.
+    assert "error" in await tools.get_patient.ainvoke({"patient_id": "%"})
+
     # Flat args (the shape the model emits) must actually filter, not silently count everyone.
     cohort = await tools.query_cohort.ainvoke({"phase": "pre", "planned_intervention": "EVAR"})
     assert cohort["total"] == 1
